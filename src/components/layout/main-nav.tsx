@@ -24,7 +24,7 @@ export function MainNav() {
 
   const pathname = usePathname();
   const { isAdmin, isAuthenticated } = useAuth();
-  console.log(isAuthenticated)
+
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
