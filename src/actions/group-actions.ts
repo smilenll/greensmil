@@ -15,14 +15,30 @@ import { Group } from '@/types/group';
 // Legacy export for backward compatibility
 export type CognitoGroup = Group;
 
+// Helper function to create Cognito client with service credentials from environment
+function createCognitoClient(): CognitoIdentityProviderClient {
+  const accessKeyId = process.env.COGNITO_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.COGNITO_SECRET_ACCESS_KEY;
+  const region = process.env.COGNITO_REGION || outputs.auth.aws_region;
+
+  if (!accessKeyId || !secretAccessKey) {
+    throw new Error('Missing AWS Cognito credentials. Please set COGNITO_ACCESS_KEY_ID and COGNITO_SECRET_ACCESS_KEY environment variables.');
+  }
+
+  return new CognitoIdentityProviderClient({
+    region,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
+  });
+}
+
 export async function getGroups(): Promise<Group[]> {
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     const command = new ListGroupsCommand({
       UserPoolId: outputs.auth.user_pool_id,
@@ -52,10 +68,7 @@ export async function createGroup(groupName: string, description?: string): Prom
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     const command = new CreateGroupCommand({
       UserPoolId: outputs.auth.user_pool_id,
@@ -74,10 +87,7 @@ export async function deleteGroup(groupName: string): Promise<void> {
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     const command = new DeleteGroupCommand({
       UserPoolId: outputs.auth.user_pool_id,
@@ -95,10 +105,7 @@ export async function addUserToGroupAction(username: string, groupName: string):
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     const command = new AdminAddUserToGroupCommand({
       UserPoolId: outputs.auth.user_pool_id,

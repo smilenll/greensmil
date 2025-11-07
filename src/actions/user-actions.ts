@@ -23,16 +23,32 @@ import { User, PaginatedUsersResult } from '@/types/user';
 // Legacy export for backward compatibility
 export type AmplifyUser = User;
 
+// Helper function to create Cognito client with service credentials from environment
+function createCognitoClient(): CognitoIdentityProviderClient {
+  const accessKeyId = process.env.COGNITO_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.COGNITO_SECRET_ACCESS_KEY;
+  const region = process.env.COGNITO_REGION || outputs.auth.aws_region;
+
+  if (!accessKeyId || !secretAccessKey) {
+    throw new Error('Missing AWS Cognito credentials. Please set COGNITO_ACCESS_KEY_ID and COGNITO_SECRET_ACCESS_KEY environment variables.');
+  }
+
+  return new CognitoIdentityProviderClient({
+    region,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
+  });
+}
+
 // Get exact user count (requires pagination through all users)
 export async function getUserCount(): Promise<number> {
   // Require admin role before executing
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     let totalCount = 0;
     let paginationToken: string | undefined;
@@ -61,10 +77,7 @@ export async function getApproximateUserCount(): Promise<{ count: number; isAppr
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     const command = new ListUsersCommand({
       UserPoolId: outputs.auth.user_pool_id,
@@ -89,10 +102,7 @@ export async function getActiveSessions(): Promise<number> {
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     const command = new ListUsersCommand({
       UserPoolId: outputs.auth.user_pool_id,
@@ -121,11 +131,8 @@ export async function getSystemStatus(): Promise<{ status: 'Online' | 'Degraded'
   await requireRole('admin');
 
   try {
-
     // Simple health check - try to connect to Cognito
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     const command = new ListUsersCommand({
       UserPoolId: outputs.auth.user_pool_id,
@@ -154,10 +161,7 @@ export async function getUsersAction(
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
         const command = new ListUsersCommand({
           UserPoolId: outputs.auth.user_pool_id,
@@ -229,10 +233,7 @@ export async function createUser(email: string, temporaryPassword: string): Prom
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     const command = new AdminCreateUserCommand({
       UserPoolId: outputs.auth.user_pool_id,
@@ -258,10 +259,7 @@ export async function updateUser(username: string, attributes: Record<string, st
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     const userAttributes = Object.entries(attributes).map(([name, value]) => ({
       Name: name,
@@ -286,10 +284,7 @@ export async function deleteUser(username: string): Promise<void> {
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     const command = new AdminDeleteUserCommand({
       UserPoolId: outputs.auth.user_pool_id,
@@ -308,10 +303,7 @@ export async function toggleUserStatus(username: string, enable: boolean): Promi
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     const command = enable 
       ? new AdminEnableUserCommand({ UserPoolId: outputs.auth.user_pool_id, Username: username })
@@ -329,10 +321,7 @@ export async function addUserToGroup(username: string, groupName: string): Promi
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     const command = new AdminAddUserToGroupCommand({
       UserPoolId: outputs.auth.user_pool_id,
@@ -351,10 +340,7 @@ export async function removeUserFromGroup(username: string, groupName: string): 
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     const command = new AdminRemoveUserFromGroupCommand({
       UserPoolId: outputs.auth.user_pool_id,
@@ -382,10 +368,7 @@ export async function getGroups(): Promise<CognitoGroup[]> {
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     const command = new ListGroupsCommand({
       UserPoolId: outputs.auth.user_pool_id,
@@ -429,10 +412,7 @@ export async function createGroup(groupName: string, description?: string): Prom
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     const command = new CreateGroupCommand({
       UserPoolId: outputs.auth.user_pool_id,
@@ -451,10 +431,7 @@ export async function deleteGroup(groupName: string): Promise<void> {
   await requireRole('admin');
 
   try {
-
-    const client = new CognitoIdentityProviderClient({
-      region: outputs.auth.aws_region,
-    });
+    const client = createCognitoClient();
 
     const command = new DeleteGroupCommand({
       UserPoolId: outputs.auth.user_pool_id,
