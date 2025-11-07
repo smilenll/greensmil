@@ -21,15 +21,6 @@ function createCognitoClient(): CognitoIdentityProviderClient {
   const secretAccessKey = process.env.COGNITO_SECRET_ACCESS_KEY;
   const region = process.env.COGNITO_REGION || outputs.auth.aws_region;
 
-  // Debug logging for production
-  console.log('Group actions environment check:', {
-    hasAccessKey: !!accessKeyId,
-    accessKeyPrefix: accessKeyId?.substring(0, 4),
-    hasSecretKey: !!secretAccessKey,
-    region,
-    nodeEnv: process.env.NODE_ENV
-  });
-
   if (!accessKeyId || !secretAccessKey) {
     throw new Error('Missing AWS Cognito credentials. Please set COGNITO_ACCESS_KEY_ID and COGNITO_SECRET_ACCESS_KEY environment variables.');
   }

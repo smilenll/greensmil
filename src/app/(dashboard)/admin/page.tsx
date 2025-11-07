@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 export default async function AdminPage() {
   let users, activeSessions, systemStatus;
 
+  // Note: Auth is handled by middleware - if user reaches here, they have admin role
   try {
     [users, activeSessions, systemStatus] = await Promise.all([
       getUserCount(),
@@ -15,6 +16,7 @@ export default async function AdminPage() {
       getSystemStatus()
     ]);
   } catch (error) {
+    // Only system errors reach here (not auth errors)
     console.error('Admin page error:', error);
     return (
       <div className="p-6">
@@ -24,7 +26,7 @@ export default async function AdminPage() {
             {error instanceof Error ? error.message : 'Unknown error occurred'}
           </p>
           <p className="text-sm text-red-500 mt-2">
-            Check that environment variables are set: COGNITO_ACCESS_KEY_ID, COGNITO_SECRET_ACCESS_KEY, COGNITO_REGION
+            System error occurred. Please check server logs.
           </p>
         </div>
       </div>
