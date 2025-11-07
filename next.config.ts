@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone', // Required for AWS Amplify SSR support
+  // Explicitly expose environment variables for AWS Amplify
+  env: {
+    COGNITO_ACCESS_KEY_ID: process.env.COGNITO_ACCESS_KEY_ID,
+    COGNITO_SECRET_ACCESS_KEY: process.env.COGNITO_SECRET_ACCESS_KEY,
+    COGNITO_REGION: process.env.COGNITO_REGION,
+  },
   async headers() {
     return [
       {
