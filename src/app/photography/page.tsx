@@ -1,7 +1,14 @@
 import { ContentSection } from '@/components/sections';
 import { Camera } from 'lucide-react';
+import { getAllPhotos } from '@/actions/photo-actions';
+import { PhotoGallery } from '@/components/photography/photo-gallery';
 
-export default function PhotographyPage() {
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
+export default async function PhotographyPage() {
+  const photos = await getAllPhotos();
+
   return (
     <div className="pt-20 pb-16">
       <ContentSection title="Photography">
@@ -18,36 +25,20 @@ export default function PhotographyPage() {
             </p>
           </div>
 
-          {/* Photo Gallery Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Placeholder cards - replace with actual photos */}
-            {[1, 2, 3, 4, 5, 6].map((item) => (
-              <div
-                key={item}
-                className="group relative aspect-square bg-muted rounded-lg overflow-hidden hover:shadow-lg transition-all"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                  <Camera className="h-12 w-12 text-muted-foreground/30" />
-                </div>
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <p className="text-white text-center px-4">
-                    Photo {item}
-                  </p>
-                </div>
+          {/* Photo Gallery */}
+          {photos.length > 0 ? (
+            <PhotoGallery photos={photos} />
+          ) : (
+            <div className="text-center py-12">
+              <div className="bg-muted/50 rounded-lg p-8 max-w-2xl mx-auto">
+                <h3 className="text-xl font-semibold mb-2">Gallery Coming Soon</h3>
+                <p className="text-muted-foreground">
+                  I&apos;m currently curating my photography collection.
+                  Check back soon to see my latest work!
+                </p>
               </div>
-            ))}
-          </div>
-
-          {/* Coming Soon Notice */}
-          <div className="mt-12 text-center">
-            <div className="bg-muted/50 rounded-lg p-8 max-w-2xl mx-auto">
-              <h3 className="text-xl font-semibold mb-2">Gallery Coming Soon</h3>
-              <p className="text-muted-foreground">
-                I&apos;m currently curating my photography collection.
-                Check back soon to see my latest work!
-              </p>
             </div>
-          </div>
+          )}
         </div>
       </ContentSection>
     </div>

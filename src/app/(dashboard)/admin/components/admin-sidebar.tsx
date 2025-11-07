@@ -15,7 +15,10 @@ import {
   Bell,
   FileText,
   BarChart3,
-  Activity
+  Activity,
+  Camera,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import {
   Sidebar,
@@ -48,6 +51,15 @@ const menuItems = [
       { title: 'Groups', icon: UserCheck, href: '/admin/groups' },
       { title: 'Add Group', icon: UserPlus, href: '/admin/groups/add' },
 
+    ],
+  },
+  {
+    title: 'Photography',
+    icon: Camera,
+    href: '/admin/photos',
+    items: [
+      { title: 'Photo Gallery', icon: ImageIcon, href: '/admin/photos' },
+      { title: 'Upload Photos', icon: Upload, href: '/admin/photos' },
     ],
   },
   {
