@@ -35,7 +35,8 @@ function createCognitoClient(): CognitoIdentityProviderClient {
     accessKeyPrefix: accessKeyId?.substring(0, 4),
     hasSecretKey: !!secretAccessKey,
     region,
-    nodeEnv: process.env.NODE_ENV
+    nodeEnv: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
   });
 
   if (!accessKeyId || !secretAccessKey) {
