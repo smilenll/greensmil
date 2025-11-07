@@ -8,6 +8,18 @@ const nextConfig: NextConfig = {
     COGNITO_SECRET_ACCESS_KEY: process.env.COGNITO_SECRET_ACCESS_KEY,
     COGNITO_REGION: process.env.COGNITO_REGION,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.s3.*.amazonaws.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.amplifyapp.com',
+      },
+    ],
+  },
   async headers() {
     return [
       {
