@@ -6,11 +6,30 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
-  const [users, activeSessions, systemStatus] = await Promise.all([
-    getUserCount(),
-    getActiveSessions(),
-    getSystemStatus()
-  ]);
+  let users, activeSessions, systemStatus;
+
+  try {
+    [users, activeSessions, systemStatus] = await Promise.all([
+      getUserCount(),
+      getActiveSessions(),
+      getSystemStatus()
+    ]);
+  } catch (error) {
+    console.error('Admin page error:', error);
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h2 className="text-red-800 font-bold mb-2">Error Loading Admin Panel</h2>
+          <p className="text-red-600">
+            {error instanceof Error ? error.message : 'Unknown error occurred'}
+          </p>
+          <p className="text-sm text-red-500 mt-2">
+            Check that environment variables are set: COGNITO_ACCESS_KEY_ID, COGNITO_SECRET_ACCESS_KEY, COGNITO_REGION
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
