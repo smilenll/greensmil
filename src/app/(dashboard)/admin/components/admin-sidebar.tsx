@@ -59,7 +59,7 @@ const menuItems = [
     href: '/admin/photos',
     items: [
       { title: 'Photo Gallery', icon: ImageIcon, href: '/admin/photos' },
-      { title: 'Upload Photos', icon: Upload, href: '/admin/photos' },
+      { title: 'Upload Photos', icon: Upload, href: '/admin/photos/upload' },
     ],
   },
   {
