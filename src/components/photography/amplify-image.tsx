@@ -21,7 +21,7 @@ export function AmplifyImage({ imageKey, alt, fill, className, sizes }: AmplifyI
       fill={fill}
       className={className}
       sizes={sizes}
-      unoptimized={false} // Enable Next.js image optimization
+      unoptimized={true} // Bypass Next.js optimization, proxy already serves images
     />
   );
 }
