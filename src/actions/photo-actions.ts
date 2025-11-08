@@ -30,7 +30,7 @@ const cookieBasedClient = generateServerClientUsingCookies<Schema>({
   cookies,
 });
 
-export interface Photo {
+export type Photo = {
   id: string;
   title: string;
   description?: string;
@@ -40,27 +40,31 @@ export interface Photo {
   likeCount: number;
   isLikedByCurrentUser?: boolean;
   createdAt: string;
-}
+};
 
-export interface PhotoUploadResult {
+export type CreatePhotoInput = {
+  title: string;
+  description?: string;
+  file: File;
+};
+
+export type PhotoUploadResult = {
   success: boolean;
   photo?: Photo;
   error?: string;
-}
+};
 
 /**
  * Upload a new photo (Admin only)
  */
-export async function uploadPhoto(formData: FormData): Promise<PhotoUploadResult> {
+export async function uploadPhoto(input: CreatePhotoInput): Promise<PhotoUploadResult> {
   try {
     const user = await requireRole('admin');
     console.log('[uploadPhoto] Starting upload for user:', user.userId);
 
-    const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-    const file = formData.get('file') as File;
+    const { title, description, file } = input;
 
-    console.log('[uploadPhoto] Form data:', { title, hasFile: !!file, fileName: file?.name });
+    console.log('[uploadPhoto] Input data:', { title, hasFile: !!file, fileName: file?.name });
 
     if (!title || !file) {
       return { success: false, error: 'Title and file are required' };

@@ -5,6 +5,7 @@ import AmplifyClientConfig from "./amplify-client-config";
 import { MainNav, Footer } from '@/components/layout';
 import { AuthProvider } from '@/contexts/auth-context';
 import { CookieConsent } from '@/components/ui/cookie-consent';
+import { Toaster } from 'sonner';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,12 +54,13 @@ export default function RootLayout({
           <AmplifyClientConfig />
           <div className="min-h-screen flex flex-col">
             <MainNav />
-            <main className="flex-grow">
+            <main className="grow">
               {children}
             </main>
             <Footer />
           </div>
           <CookieConsent />
+          <Toaster richColors position="top-right" />
         </AuthProvider>
       </body>
     </html>
