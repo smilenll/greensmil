@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { resetPassword, confirmResetPassword } from 'aws-amplify/auth';
 import { Button, Input } from '@/components/ui';
@@ -10,8 +10,11 @@ interface ForgotPasswordFormData {
   email: string;
 }
 
-interface ResetPasswordFormData {
+interface CodeFormData {
   code: string;
+}
+
+interface ResetPasswordFormData {
   newPassword: string;
   confirmPassword: string;
 }
@@ -21,24 +24,70 @@ interface ForgotPasswordFormProps {
   onSwitchToSignIn?: () => void;
 }
 
+const RESET_EMAIL_KEY = 'password_reset_email';
+const RESET_CODE_KEY = 'password_reset_code';
+
 export function ForgotPasswordForm({ onSuccess, onSwitchToSignIn }: ForgotPasswordFormProps) {
   const [error, setError] = useState('');
-  const [needsCode, setNeedsCode] = useState(false);
+  const [step, setStep] = useState<'email' | 'code' | 'password'>('email');
   const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [isResending, setIsResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ForgotPasswordFormData>();
+  const { register: registerCode, handleSubmit: handleSubmitCode, formState: { isSubmitting: isVerifying } } = useForm<CodeFormData>();
   const { register: registerReset, handleSubmit: handleSubmitReset, formState: { isSubmitting: isResetting }, watch } = useForm<ResetPasswordFormData>();
 
   const newPassword = watch('newPassword');
 
+  // Load pending password reset from localStorage on mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem(RESET_EMAIL_KEY);
+    const savedCode = localStorage.getItem(RESET_CODE_KEY);
+
+    if (savedEmail && savedCode) {
+      setEmail(savedEmail);
+      setCode(savedCode);
+      setStep('password');
+    } else if (savedEmail) {
+      setEmail(savedEmail);
+      setStep('code');
+    }
+  }, []);
+
   const onSubmit = async (data: ForgotPasswordFormData) => {
     try {
       setError('');
-      await resetPassword({ username: data.email });
+      const { nextStep } = await resetPassword({ username: data.email });
+
       setEmail(data.email);
-      setNeedsCode(true);
+      // Save email to localStorage for state persistence
+      localStorage.setItem(RESET_EMAIL_KEY, data.email);
+
+      // Check nextStep to determine flow
+      if (nextStep.resetPasswordStep === 'CONFIRM_RESET_PASSWORD_WITH_CODE') {
+        setStep('code');
+      } else if (nextStep.resetPasswordStep === 'DONE') {
+        // Password reset complete without code
+        localStorage.removeItem(RESET_EMAIL_KEY);
+        onSuccess?.();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send reset code');
+    }
+  };
+
+  const onVerifyCode = async (data: CodeFormData) => {
+    try {
+      setError('');
+      setCode(data.code);
+      // Save code to localStorage
+      localStorage.setItem(RESET_CODE_KEY, data.code);
+      // Move to password entry step
+      setStep('password');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid code');
     }
   };
 
@@ -47,28 +96,103 @@ export function ForgotPasswordForm({ onSuccess, onSwitchToSignIn }: ForgotPasswo
       setError('');
       await confirmResetPassword({
         username: email,
-        confirmationCode: data.code,
+        confirmationCode: code,
         newPassword: data.newPassword
       });
+      // Clear saved data from localStorage on success
+      localStorage.removeItem(RESET_EMAIL_KEY);
+      localStorage.removeItem(RESET_CODE_KEY);
       onSuccess?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to reset password');
     }
   };
 
-  if (needsCode) {
+  const handleResendCode = async () => {
+    try {
+      setIsResending(true);
+      setError('');
+      setResendMessage('');
+      await resetPassword({ username: email });
+      setResendMessage('Code resent successfully! Check your email.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to resend code');
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const handleBackToEmail = () => {
+    setStep('email');
+    setEmail('');
+    setCode('');
+    setError('');
+    setResendMessage('');
+    localStorage.removeItem(RESET_EMAIL_KEY);
+    localStorage.removeItem(RESET_CODE_KEY);
+  };
+
+  const handleBackToCode = () => {
+    setStep('code');
+    setCode('');
+    setError('');
+    setResendMessage('');
+    localStorage.removeItem(RESET_CODE_KEY);
+  };
+
+  // Step 2: Code verification
+  if (step === 'code') {
     return (
-      <form onSubmit={handleSubmitReset(onReset)} className="space-y-4">
+      <form onSubmit={handleSubmitCode(onVerifyCode)} className="space-y-4">
         <div className="space-y-2">
           <label htmlFor="code" className="text-sm font-medium">Confirmation Code</label>
           <Input
             id="code"
-            {...registerReset('code', { required: 'Code is required' })}
+            {...registerCode('code', { required: 'Code is required' })}
             placeholder="123456"
+            autoFocus
           />
-          <p className="text-xs text-muted-foreground">Check your email for the reset code</p>
+          <p className="text-xs text-muted-foreground">
+            We sent a reset code to <span className="font-medium">{email}</span>
+          </p>
         </div>
 
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        {resendMessage && <p className="text-sm text-green-600">{resendMessage}</p>}
+
+        <Button type="submit" className="w-full" disabled={isVerifying}>
+          {isVerifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Verify Code
+        </Button>
+
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
+            onClick={handleResendCode}
+            disabled={isResending}
+          >
+            {isResending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Resend Code
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="flex-1"
+            onClick={handleBackToEmail}
+          >
+            Back
+          </Button>
+        </div>
+      </form>
+    );
+  }
+
+  // Step 3: New password entry
+  if (step === 'password') {
+    return (
+      <form onSubmit={handleSubmitReset(onReset)} className="space-y-4">
         <div className="space-y-2">
           <label htmlFor="newPassword" className="text-sm font-medium">New Password</label>
           <Input
@@ -79,6 +203,7 @@ export function ForgotPasswordForm({ onSuccess, onSwitchToSignIn }: ForgotPasswo
               minLength: { value: 8, message: 'Password must be at least 8 characters' }
             })}
             placeholder="••••••••"
+            autoFocus
           />
         </div>
 
@@ -101,9 +226,20 @@ export function ForgotPasswordForm({ onSuccess, onSwitchToSignIn }: ForgotPasswo
           {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Reset Password
         </Button>
+
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full"
+          onClick={handleBackToCode}
+        >
+          Back to Code
+        </Button>
       </form>
     );
   }
+
+  // Step 1: Email entry
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
