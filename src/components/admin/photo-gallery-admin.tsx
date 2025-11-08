@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
+import { useState, useEffect } from 'react';
 import { deletePhoto, type Photo } from '@/actions/photo-actions';
 import { Button } from '@/components/ui/button';
 import { Heart, Trash2 } from 'lucide-react';
+import { AmplifyImage } from '@/components/photography/amplify-image';
 
 interface PhotoGalleryAdminProps {
   photos: Photo[];
@@ -13,6 +13,11 @@ interface PhotoGalleryAdminProps {
 export function PhotoGalleryAdmin({ photos }: PhotoGalleryAdminProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [localPhotos, setLocalPhotos] = useState(photos);
+
+  // Update local state when props change (after upload/refresh)
+  useEffect(() => {
+    setLocalPhotos(photos);
+  }, [photos]);
 
   const handleDelete = async (photoId: string) => {
     if (!confirm('Are you sure you want to delete this photo?')) {
@@ -47,8 +52,8 @@ export function PhotoGalleryAdmin({ photos }: PhotoGalleryAdminProps) {
           className="group relative bg-muted rounded-lg overflow-hidden"
         >
           <div className="aspect-square relative">
-            <Image
-              src={photo.imageUrl}
+            <AmplifyImage
+              imageKey={photo.imageKey}
               alt={photo.title}
               fill
               className="object-cover"

@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { togglePhotoLike, type Photo } from '@/actions/photo-actions';
 import { Button } from '@/components/ui/button';
 import { Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
+import { AmplifyImage } from './amplify-image';
 
 interface PhotoGalleryProps {
   photos: Photo[];
@@ -54,8 +54,8 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
           className="group relative aspect-square bg-muted rounded-lg overflow-hidden hover:shadow-lg transition-all"
         >
           {/* Photo Image */}
-          <Image
-            src={photo.imageUrl}
+          <AmplifyImage
+            imageKey={photo.imageKey}
             alt={photo.title}
             fill
             className="object-cover"
