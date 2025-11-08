@@ -1,111 +1,123 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { uploadPhoto } from '@/actions/photo-actions';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { toast } from 'sonner';
+import { uploadPhoto, type CreatePhotoInput } from '@/actions/photo-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload, X } from 'lucide-react';
 
+// Validation schema
+const photoFormSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(100, 'Title must be less than 100 characters'),
+  description: z.string().max(500, 'Description must be less than 500 characters').optional(),
+  file: z
+    .custom<FileList>()
+    .refine((files) => files && files.length > 0, 'Photo is required')
+    .refine((files) => files?.[0]?.type.startsWith('image/'), 'Only image files are allowed')
+    .refine((files) => files?.[0]?.size <= 5 * 1024 * 1024, 'File must be less than 5MB'),
+});
+
+type PhotoFormData = z.infer<typeof photoFormSchema>;
+
 export function PhotoUploadForm() {
   const router = useRouter();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<PhotoFormData>({
+    resolver: zodResolver(photoFormSchema),
+  });
 
-    // Validate
-    if (!selectedFile.type.startsWith('image/')) {
-      setMessage({ type: 'error', text: 'Please select an image file' });
+  const fileList = watch('file');
+
+  // Automatically update preview when file changes
+  useEffect(() => {
+    const file = fileList?.[0];
+
+    if (!file) {
+      setPreview(null);
       return;
     }
 
-    if (selectedFile.size > 5 * 1024 * 1024) {
-      setMessage({ type: 'error', text: 'File must be less than 5MB' });
-      return;
-    }
+    const newPreviewUrl = URL.createObjectURL(file);
+    setPreview(newPreviewUrl);
 
-    // Set file and create preview
-    setFile(selectedFile);
-    setMessage(null);
-
-    const reader = new FileReader();
-    reader.onload = () => setPreview(reader.result as string);
-    reader.readAsDataURL(selectedFile);
-  };
+    // Cleanup function runs when component unmounts or effect re-runs
+    return () => {
+      URL.revokeObjectURL(newPreviewUrl);
+    };
+  }, [fileList]);
 
   const handleRemove = () => {
-    setFile(null);
-    setPreview(null);
+    // Use setValue instead of reset to only clear the file field
+    setValue('file', undefined as any);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!title.trim() || !file) {
-      setMessage({ type: 'error', text: 'Please provide a title and select a photo' });
+  const onSubmit = async (data: PhotoFormData) => {
+    const file = data.file?.[0];
+    if (!file) {
+      toast.error('Please select a photo');
       return;
     }
 
-    setIsUploading(true);
-    setMessage(null);
+    const input: CreatePhotoInput = {
+      title: data.title.trim(),
+      description: data.description?.trim(),
+      file,
+    };
 
-    const formData = new FormData();
-    formData.append('title', title.trim());
-    formData.append('description', description.trim());
-    formData.append('file', file);
-
-    const result = await uploadPhoto(formData);
+    const result = await uploadPhoto(input);
 
     if (result.success) {
-      setMessage({ type: 'success', text: 'Photo uploaded successfully!' });
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setFile(null);
-      setPreview(null);
-      // Refresh the page to show the new photo
+      toast.success('Photo uploaded successfully!');
+      reset();
+      // Consider state management
       router.refresh();
-      setTimeout(() => setMessage(null), 3000);
     } else {
-      setMessage({ type: 'error', text: result.error || 'Upload failed' });
+      toast.error(result.error || 'Upload failed');
     }
-
-    setIsUploading(false);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Title */}
       <div>
         <label className="block text-sm font-medium mb-2">Title *</label>
         <Input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          {...register('title')}
           placeholder="Enter photo title"
-          disabled={isUploading}
-          required
+          disabled={isSubmitting}
         />
+        {errors.title && (
+          <p className="text-sm text-red-600 mt-1">{errors.title.message}</p>
+        )}
       </div>
 
       {/* Description */}
       <div>
         <label className="block text-sm font-medium mb-2">Description</label>
         <Textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          {...register('description')}
           placeholder="Enter photo description (optional)"
-          disabled={isUploading}
+          disabled={isSubmitting}
           rows={3}
         />
+        {errors.description && (
+          <p className="text-sm text-red-600 mt-1">{errors.description.message}</p>
+        )}
       </div>
 
       {/* Photo Upload */}
@@ -120,8 +132,8 @@ export function PhotoUploadForm() {
             <input
               type="file"
               accept="image/*"
-              onChange={handleFileSelect}
-              disabled={isUploading}
+              {...register('file')}
+              disabled={isSubmitting}
               className="hidden"
             />
           </label>
@@ -137,33 +149,25 @@ export function PhotoUploadForm() {
             <button
               type="button"
               onClick={handleRemove}
-              disabled={isUploading}
+              disabled={isSubmitting}
               className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
         )}
+        {errors.file && (
+          <p className="text-sm text-red-600 mt-1">{errors.file.message}</p>
+        )}
       </div>
-
-      {/* Message */}
-      {message && (
-        <div className={`p-4 rounded-lg ${
-          message.type === 'success'
-            ? 'bg-green-50 text-green-700 border border-green-200'
-            : 'bg-red-50 text-red-700 border border-red-200'
-        }`}>
-          {message.text}
-        </div>
-      )}
 
       {/* Submit */}
       <Button
         type="submit"
-        disabled={isUploading || !file || !title.trim()}
+        disabled={isSubmitting}
         className="w-full"
       >
-        {isUploading ? (
+        {isSubmitting ? (
           <>
             <Upload className="mr-2 h-4 w-4 animate-spin" />
             Uploading...
