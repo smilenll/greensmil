@@ -1,16 +1,29 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { generateClient } from 'aws-amplify/data';
-import { uploadData, getUrl, remove } from 'aws-amplify/storage';
+import { generateServerClientUsingCookies } from '@aws-amplify/adapter-nextjs/data';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import type { Schema } from '../../amplify/data/resource';
 import { requireRole, requireAuth } from '@/lib/auth-server';
 import { cookies } from 'next/headers';
-import { createServerRunner } from '@aws-amplify/adapter-nextjs';
 import outputs from '../../amplify_outputs.json';
 
-const { runWithAmplifyServerContext } = createServerRunner({
+// Initialize S3 client
+const s3Client = new S3Client({
+  region: outputs.storage?.aws_region || 'us-east-2',
+  // Use environment credentials if available (production), otherwise use default provider (development)
+  ...(process.env.COGNITO_ACCESS_KEY_ID ? {
+    credentials: {
+      accessKeyId: process.env.COGNITO_ACCESS_KEY_ID,
+      secretAccessKey: process.env.COGNITO_SECRET_ACCESS_KEY || '',
+    },
+  } : {}),
+});
+
+// Generate cookie-based Amplify Data client for server-side operations
+const cookieBasedClient = generateServerClientUsingCookies<Schema>({
   config: outputs,
+  cookies,
 });
 
 export interface Photo {
@@ -64,64 +77,42 @@ export async function uploadPhoto(formData: FormData): Promise<PhotoUploadResult
     const fileBuffer = await file.arrayBuffer();
     console.log('[uploadPhoto] File key:', fileKey, 'Size:', file.size);
 
+    // Upload to S3 using SDK
+    const bucketName = outputs.storage?.bucket_name;
+    if (!bucketName) {
+      throw new Error('Storage bucket not configured');
+    }
+
     let uploadResult;
     try {
-      uploadResult = await runWithAmplifyServerContext({
-        nextServerContext: { cookies },
-        operation: async (contextSpec) => {
-          const result = uploadData({
-            path: fileKey,
-            data: new Uint8Array(fileBuffer),
-            options: {
-              contentType: file.type,
-            },
-          });
-          return await result.result;
-        },
+      const putCommand = new PutObjectCommand({
+        Bucket: bucketName,
+        Key: fileKey,
+        Body: new Uint8Array(fileBuffer),
+        ContentType: file.type,
       });
-      console.log('[uploadPhoto] S3 upload successful:', uploadResult.path);
+
+      uploadResult = await s3Client.send(putCommand);
+      console.log('[uploadPhoto] S3 upload successful:', fileKey);
     } catch (uploadError) {
       console.error('[uploadPhoto] S3 upload failed:', uploadError);
       throw new Error(`Storage upload failed: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
     }
 
-    // Get public URL
-    let imageUrl;
-    try {
-      imageUrl = await runWithAmplifyServerContext({
-        nextServerContext: { cookies },
-        operation: async (contextSpec) => {
-          const result = await getUrl({
-            path: fileKey,
-            options: {
-              expiresIn: 31536000, // 1 year
-            },
-          });
-          return result.url.toString();
-        },
-      });
-      console.log('[uploadPhoto] Got URL:', imageUrl.substring(0, 50) + '...');
-    } catch (urlError) {
-      console.error('[uploadPhoto] Get URL failed:', urlError);
-      throw new Error('Failed to get image URL');
-    }
+    // Construct public S3 URL (photos are configured for guest read access)
+    const imageUrl = `https://${bucketName}.s3.${outputs.storage?.aws_region || 'us-east-2'}.amazonaws.com/${fileKey}`;
+    console.log('[uploadPhoto] Image URL:', imageUrl.substring(0, 50) + '...');
 
     // Create database entry
     let photoData;
     try {
-      photoData = await runWithAmplifyServerContext({
-        nextServerContext: { cookies },
-        operation: async (contextSpec) => {
-          const client = generateClient<Schema>({ authMode: 'userPool' });
-          return await client.models.Photo.create({
-            title,
-            description: description || null,
-            imageKey: fileKey,
-            imageUrl: imageUrl,
-            uploadedBy: user.userId,
-            likeCount: 0,
-          });
-        },
+      photoData = await cookieBasedClient.models.Photo.create({
+        title,
+        description: description || null,
+        imageKey: fileKey,
+        imageUrl: imageUrl,
+        uploadedBy: user.userId,
+        likeCount: 0,
       });
 
       if (!photoData.data) {
@@ -163,50 +154,44 @@ export async function uploadPhoto(formData: FormData): Promise<PhotoUploadResult
  */
 export async function getAllPhotos(): Promise<Photo[]> {
   try {
-    return await runWithAmplifyServerContext({
-      nextServerContext: { cookies },
-      operation: async (contextSpec) => {
-        const client = generateClient<Schema>({ authMode: 'userPool' });
-        const { data: photos } = await client.models.Photo.list();
+    const { data: photos } = await cookieBasedClient.models.Photo.list();
 
-        if (!photos) return [];
+    if (!photos) return [];
 
-        // Get current user to check likes
-        let currentUserId: string | undefined;
-        try {
-          const user = await requireAuth();
-          currentUserId = user.userId;
-        } catch {
-          // User not authenticated - that's ok
+    // Get current user to check likes
+    let currentUserId: string | undefined;
+    try {
+      const user = await requireAuth();
+      currentUserId = user.userId;
+    } catch {
+      // User not authenticated - that's ok
+    }
+
+    return await Promise.all(
+      photos.map(async (photo) => {
+        let isLiked = false;
+
+        if (currentUserId) {
+          const { data: like } = await cookieBasedClient.models.PhotoLike.get({
+            photoId: photo.id,
+            userId: currentUserId,
+          });
+          isLiked = !!like;
         }
 
-        return await Promise.all(
-          photos.map(async (photo) => {
-            let isLiked = false;
-
-            if (currentUserId) {
-              const { data: like } = await client.models.PhotoLike.get({
-                photoId: photo.id,
-                userId: currentUserId,
-              });
-              isLiked = !!like;
-            }
-
-            return {
-              id: photo.id,
-              title: photo.title,
-              description: photo.description || undefined,
-              imageUrl: photo.imageUrl!,
-              imageKey: photo.imageKey,
-              uploadedBy: photo.uploadedBy,
-              likeCount: photo.likeCount || 0,
-              isLikedByCurrentUser: isLiked,
-              createdAt: photo.createdAt!,
-            };
-          })
-        );
-      },
-    });
+        return {
+          id: photo.id,
+          title: photo.title,
+          description: photo.description || undefined,
+          imageUrl: photo.imageUrl!,
+          imageKey: photo.imageKey,
+          uploadedBy: photo.uploadedBy,
+          likeCount: photo.likeCount || 0,
+          isLikedByCurrentUser: isLiked,
+          createdAt: photo.createdAt!,
+        };
+      })
+    );
   } catch (error) {
     console.error('Get photos error:', error);
     return [];
@@ -220,66 +205,59 @@ export async function togglePhotoLike(photoId: string): Promise<{ success: boole
   try {
     const user = await requireAuth();
 
-    return await runWithAmplifyServerContext({
-      nextServerContext: { cookies },
-      operation: async (contextSpec) => {
-        const client = generateClient<Schema>({ authMode: 'userPool' });
-
-        // Check if already liked
-        const { data: existingLike } = await client.models.PhotoLike.get({
-          photoId,
-          userId: user.userId,
-        });
-
-        if (existingLike) {
-          // Unlike
-          await client.models.PhotoLike.delete({
-            photoId,
-            userId: user.userId,
-          });
-
-          // Decrement like count
-          const { data: photo } = await client.models.Photo.get({ id: photoId });
-          if (photo) {
-            await client.models.Photo.update({
-              id: photoId,
-              likeCount: Math.max(0, (photo.likeCount || 0) - 1),
-            });
-          }
-
-          revalidatePath('/photography');
-
-          return {
-            success: true,
-            isLiked: false,
-            likeCount: Math.max(0, (photo?.likeCount || 0) - 1),
-          };
-        } else {
-          // Like
-          await client.models.PhotoLike.create({
-            photoId,
-            userId: user.userId,
-          });
-
-          // Increment like count
-          const { data: photo } = await client.models.Photo.get({ id: photoId });
-          if (photo) {
-            await client.models.Photo.update({
-              id: photoId,
-              likeCount: (photo.likeCount || 0) + 1,
-            });
-          }
-
-          revalidatePath('/photography');
-
-          return {
-            success: true,
-            isLiked: true,
-            likeCount: (photo?.likeCount || 0) + 1,
-          };
-        }
-      },
+    // Check if already liked
+    const { data: existingLike } = await cookieBasedClient.models.PhotoLike.get({
+      photoId,
+      userId: user.userId,
     });
+
+    if (existingLike) {
+      // Unlike
+      await cookieBasedClient.models.PhotoLike.delete({
+        photoId,
+        userId: user.userId,
+      });
+
+      // Decrement like count
+      const { data: photo } = await cookieBasedClient.models.Photo.get({ id: photoId });
+      if (photo) {
+        await cookieBasedClient.models.Photo.update({
+          id: photoId,
+          likeCount: Math.max(0, (photo.likeCount || 0) - 1),
+        });
+      }
+
+      revalidatePath('/photography');
+
+      return {
+        success: true,
+        isLiked: false,
+        likeCount: Math.max(0, (photo?.likeCount || 0) - 1),
+      };
+    } else {
+      // Like
+      await cookieBasedClient.models.PhotoLike.create({
+        photoId,
+        userId: user.userId,
+      });
+
+      // Increment like count
+      const { data: photo } = await cookieBasedClient.models.Photo.get({ id: photoId });
+      if (photo) {
+        await cookieBasedClient.models.Photo.update({
+          id: photoId,
+          likeCount: (photo.likeCount || 0) + 1,
+        });
+      }
+
+      revalidatePath('/photography');
+
+      return {
+        success: true,
+        isLiked: true,
+        likeCount: (photo?.likeCount || 0) + 1,
+      };
+    }
   } catch (error) {
     console.error('Toggle like error:', error);
     return {
@@ -297,53 +275,51 @@ export async function deletePhoto(photoId: string): Promise<{ success: boolean; 
   try {
     await requireRole('admin');
 
-    return await runWithAmplifyServerContext({
-      nextServerContext: { cookies },
-      operation: async (contextSpec) => {
-        const client = generateClient<Schema>({ authMode: 'userPool' });
+    // Get photo to get image key
+    const { data: photo } = await cookieBasedClient.models.Photo.get({ id: photoId });
+    if (!photo) {
+      return { success: false, error: 'Photo not found' };
+    }
 
-        // Get photo to get image key
-        const { data: photo } = await client.models.Photo.get({ id: photoId });
-        if (!photo) {
-          return { success: false, error: 'Photo not found' };
-        }
-
-        // Delete from S3
-        try {
-          await remove({
-            path: photo.imageKey,
-          });
-          console.log('[deletePhoto] S3 file deleted:', photo.imageKey);
-        } catch (storageError) {
-          console.error('[deletePhoto] S3 deletion failed:', storageError);
-          // Continue even if S3 deletion fails - we still want to remove from DB
-        }
-
-        // Delete all likes first
-        const { data: likes } = await client.models.PhotoLike.list({
-          filter: { photoId: { eq: photoId } },
+    // Delete from S3
+    try {
+      const bucketName = outputs.storage?.bucket_name;
+      if (bucketName) {
+        const deleteCommand = new DeleteObjectCommand({
+          Bucket: bucketName,
+          Key: photo.imageKey,
         });
+        await s3Client.send(deleteCommand);
+        console.log('[deletePhoto] S3 file deleted:', photo.imageKey);
+      }
+    } catch (storageError) {
+      console.error('[deletePhoto] S3 deletion failed:', storageError);
+      // Continue even if S3 deletion fails - we still want to remove from DB
+    }
 
-        if (likes) {
-          await Promise.all(
-            likes.map((like) =>
-              client.models.PhotoLike.delete({
-                photoId: like.photoId,
-                userId: like.userId,
-              })
-            )
-          );
-        }
-
-        // Delete photo record
-        await client.models.Photo.delete({ id: photoId });
-
-        revalidatePath('/photography');
-        revalidatePath('/admin/photos');
-
-        return { success: true };
-      },
+    // Delete all likes first
+    const { data: likes } = await cookieBasedClient.models.PhotoLike.list({
+      filter: { photoId: { eq: photoId } },
     });
+
+    if (likes) {
+      await Promise.all(
+        likes.map((like) =>
+          cookieBasedClient.models.PhotoLike.delete({
+            photoId: like.photoId,
+            userId: like.userId,
+          })
+        )
+      );
+    }
+
+    // Delete photo record
+    await cookieBasedClient.models.Photo.delete({ id: photoId });
+
+    revalidatePath('/photography');
+    revalidatePath('/admin/photos');
+
+    return { success: true };
   } catch (error) {
     console.error('Delete photo error:', error);
     return {

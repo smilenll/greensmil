@@ -18,10 +18,30 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.amplifyapp.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'greensmil.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.greensmil.com',
+      },
     ],
+    // Image optimization settings for production
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 3600,
   },
   async headers() {
     return [
+      {
+        source: '/api/images',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
+          },
+        ],
+      },
       {
         source: '/(.*)',
         headers: [

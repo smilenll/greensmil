@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { uploadPhoto } from '@/actions/photo-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Upload, X } from 'lucide-react';
 
 export function PhotoUploadForm() {
+  const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -70,6 +72,8 @@ export function PhotoUploadForm() {
       setDescription('');
       setFile(null);
       setPreview(null);
+      // Refresh the page to show the new photo
+      router.refresh();
       setTimeout(() => setMessage(null), 3000);
     } else {
       setMessage({ type: 'error', text: result.error || 'Upload failed' });
