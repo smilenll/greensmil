@@ -1,200 +1,140 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
+import Image from 'next/image';
 import { uploadPhoto } from '@/actions/photo-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, Image as ImageIcon, X } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 
 export function PhotoUploadForm() {
-  const [isUploading, setIsUploading] = useState(false);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const formRef = useRef<HTMLFormElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) {
-      setPreview(null);
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+
+    // Validate
+    if (!selectedFile.type.startsWith('image/')) {
+      setMessage({ type: 'error', text: 'Please select an image file' });
       return;
     }
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setError('Please select an image file');
-      setPreview(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+    if (selectedFile.size > 5 * 1024 * 1024) {
+      setMessage({ type: 'error', text: 'File must be less than 5MB' });
       return;
     }
 
-    // Validate file size (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('File size must be less than 5MB');
-      setPreview(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      return;
-    }
+    // Set file and create preview
+    setFile(selectedFile);
+    setMessage(null);
 
-    setError(null);
     const reader = new FileReader();
-
-    reader.onerror = () => {
-      setError('Failed to read file. Please try again.');
-      setPreview(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    };
-
-    reader.onloadend = () => {
-      if (reader.result) {
-        setPreview(reader.result as string);
-      }
-    };
-
-    reader.readAsDataURL(file);
+    reader.onload = () => setPreview(reader.result as string);
+    reader.readAsDataURL(selectedFile);
   };
 
-  const handleRemovePreview = () => {
+  const handleRemove = () => {
+    setFile(null);
     setPreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Double-check validation before submitting
-    const formData = new FormData(e.currentTarget);
-    const title = formData.get('title');
-    const file = formData.get('file') as File;
-
-    if (!title || !file || file.size === 0) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
-    if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError('File size must be less than 5MB');
+    if (!title.trim() || !file) {
+      setMessage({ type: 'error', text: 'Please provide a title and select a photo' });
       return;
     }
 
     setIsUploading(true);
-    setError(null);
-    setSuccess(false);
+    setMessage(null);
 
-    try {
-      const result = await uploadPhoto(formData);
+    const formData = new FormData();
+    formData.append('title', title.trim());
+    formData.append('description', description.trim());
+    formData.append('file', file);
 
-      if (result.success) {
-        setSuccess(true);
-        setPreview(null);
-        formRef.current?.reset();
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
+    const result = await uploadPhoto(formData);
 
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccess(false), 3000);
-      } else {
-        setError(result.error || 'Failed to upload photo');
-      }
-    } catch (err) {
-      console.error('Upload error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to upload photo');
-    } finally {
-      setIsUploading(false);
+    if (result.success) {
+      setMessage({ type: 'success', text: 'Photo uploaded successfully!' });
+      // Reset form
+      setTitle('');
+      setDescription('');
+      setFile(null);
+      setPreview(null);
+      setTimeout(() => setMessage(null), 3000);
+    } else {
+      setMessage({ type: 'error', text: result.error || 'Upload failed' });
     }
+
+    setIsUploading(false);
   };
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Title */}
       <div>
-        <label htmlFor="title" className="block text-sm font-medium mb-1">
-          Title *
-        </label>
+        <label className="block text-sm font-medium mb-2">Title *</label>
         <Input
-          id="title"
-          name="title"
-          type="text"
-          required
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           placeholder="Enter photo title"
           disabled={isUploading}
+          required
         />
       </div>
 
       {/* Description */}
       <div>
-        <label htmlFor="description" className="block text-sm font-medium mb-1">
-          Description
-        </label>
+        <label className="block text-sm font-medium mb-2">Description</label>
         <Textarea
-          id="description"
-          name="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           placeholder="Enter photo description (optional)"
           disabled={isUploading}
           rows={3}
         />
       </div>
 
-      {/* File Upload */}
+      {/* Photo Upload */}
       <div>
-        <label htmlFor="file" className="block text-sm font-medium mb-1">
-          Photo *
-        </label>
+        <label className="block text-sm font-medium mb-2">Photo *</label>
 
         {!preview ? (
-          <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center hover:border-primary transition-colors">
+          <label className="block border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors">
+            <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-sm text-muted-foreground mb-1">Click to upload photo</p>
+            <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 5MB</p>
             <input
-              ref={fileInputRef}
-              id="file"
-              name="file"
               type="file"
               accept="image/*"
-              required
-              onChange={handleFileChange}
+              onChange={handleFileSelect}
               disabled={isUploading}
               className="hidden"
             />
-            <label
-              htmlFor="file"
-              className="cursor-pointer flex flex-col items-center space-y-2"
-            >
-              <ImageIcon className="h-12 w-12 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                Click to upload or drag and drop
-              </span>
-              <span className="text-xs text-muted-foreground">
-                PNG, JPG, GIF up to 5MB
-              </span>
-            </label>
-          </div>
+          </label>
         ) : (
-          <div className="relative">
-            <img
+          <div className="relative rounded-lg overflow-hidden">
+            <Image
               src={preview}
               alt="Preview"
-              className="w-full h-64 object-cover rounded-lg"
+              width={800}
+              height={400}
+              className="w-full h-64 object-cover"
             />
             <button
               type="button"
-              onClick={handleRemovePreview}
-              className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+              onClick={handleRemove}
               disabled={isUploading}
+              className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full"
             >
               <X className="h-4 w-4" />
             </button>
@@ -202,22 +142,23 @@ export function PhotoUploadForm() {
         )}
       </div>
 
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
-          {error}
+      {/* Message */}
+      {message && (
+        <div className={`p-4 rounded-lg ${
+          message.type === 'success'
+            ? 'bg-green-50 text-green-700 border border-green-200'
+            : 'bg-red-50 text-red-700 border border-red-200'
+        }`}>
+          {message.text}
         </div>
       )}
 
-      {/* Success Message */}
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded">
-          Photo uploaded successfully!
-        </div>
-      )}
-
-      {/* Submit Button */}
-      <Button type="submit" disabled={isUploading || !preview} className="w-full">
+      {/* Submit */}
+      <Button
+        type="submit"
+        disabled={isUploading || !file || !title.trim()}
+        className="w-full"
+      >
         {isUploading ? (
           <>
             <Upload className="mr-2 h-4 w-4 animate-spin" />
