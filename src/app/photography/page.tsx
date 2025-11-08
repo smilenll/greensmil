@@ -2,15 +2,11 @@ import { ContentSection } from '@/components/sections';
 import { Camera } from 'lucide-react';
 import { getAllPhotos } from '@/actions/photo-actions';
 import { PhotoGallery } from '@/components/photography/photo-gallery';
-import { requireRole } from '@/lib/auth-server';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
 export default async function PhotographyPage() {
-  // Require admin role to view photography page
-  await requireRole('admin');
-
   const photos = await getAllPhotos();
 
   return (

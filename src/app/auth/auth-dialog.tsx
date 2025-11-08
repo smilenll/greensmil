@@ -63,7 +63,9 @@ export function AuthDialog({ children }: AuthDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       setIsOpen(open);
-      if (!open) setShowForgotPassword(false);
+      if (!open) {
+        setShowForgotPassword(false);
+      }
     }}>
       <DialogTrigger asChild>
         {children}
@@ -79,7 +81,12 @@ export function AuthDialog({ children }: AuthDialogProps) {
                 setShowForgotPassword(false);
                 setIsOpen(false);
               }}
-              onSwitchToSignIn={() => setShowForgotPassword(false)}
+              onSwitchToSignIn={() => {
+                setShowForgotPassword(false);
+                // Clear password reset localStorage when switching back to sign in
+                localStorage.removeItem('password_reset_email');
+                localStorage.removeItem('password_reset_code');
+              }}
             />
           </>
         ) : (
@@ -95,7 +102,12 @@ export function AuthDialog({ children }: AuthDialogProps) {
               <TabsContent value="signin">
                 <SignInForm
                   onSuccess={() => setIsOpen(false)}
-                  onForgotPassword={() => setShowForgotPassword(true)}
+                  onForgotPassword={() => {
+                    // Clear any old password reset data when starting fresh
+                    localStorage.removeItem('password_reset_email');
+                    localStorage.removeItem('password_reset_code');
+                    setShowForgotPassword(true);
+                  }}
                 />
               </TabsContent>
               <TabsContent value="signup">
