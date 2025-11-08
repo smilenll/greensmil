@@ -8,9 +8,13 @@ import { requireRole, requireAuth } from '@/lib/auth-server';
 import { cookies } from 'next/headers';
 import outputs from '../../amplify_outputs.json';
 
+// S3 configuration
+const BUCKET_NAME = 'amplify-d22ytonhmq8rvo-ma-photogallerybucketb708eb-eofbcbyvznxm';
+const AWS_REGION = process.env.COGNITO_REGION || 'us-east-2';
+
 // Initialize S3 client
 const s3Client = new S3Client({
-  region: outputs.storage?.aws_region || 'us-east-2',
+  region: AWS_REGION,
   // Use environment credentials if available (production), otherwise use default provider (development)
   ...(process.env.COGNITO_ACCESS_KEY_ID ? {
     credentials: {
@@ -78,15 +82,10 @@ export async function uploadPhoto(formData: FormData): Promise<PhotoUploadResult
     console.log('[uploadPhoto] File key:', fileKey, 'Size:', file.size);
 
     // Upload to S3 using SDK
-    const bucketName = outputs.storage?.bucket_name;
-    if (!bucketName) {
-      throw new Error('Storage bucket not configured');
-    }
-
     let uploadResult;
     try {
       const putCommand = new PutObjectCommand({
-        Bucket: bucketName,
+        Bucket: BUCKET_NAME,
         Key: fileKey,
         Body: new Uint8Array(fileBuffer),
         ContentType: file.type,
@@ -100,7 +99,7 @@ export async function uploadPhoto(formData: FormData): Promise<PhotoUploadResult
     }
 
     // Construct public S3 URL (photos are configured for guest read access)
-    const imageUrl = `https://${bucketName}.s3.${outputs.storage?.aws_region || 'us-east-2'}.amazonaws.com/${fileKey}`;
+    const imageUrl = `https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${fileKey}`;
     console.log('[uploadPhoto] Image URL:', imageUrl.substring(0, 50) + '...');
 
     // Create database entry
@@ -283,15 +282,12 @@ export async function deletePhoto(photoId: string): Promise<{ success: boolean; 
 
     // Delete from S3
     try {
-      const bucketName = outputs.storage?.bucket_name;
-      if (bucketName) {
-        const deleteCommand = new DeleteObjectCommand({
-          Bucket: bucketName,
-          Key: photo.imageKey,
-        });
-        await s3Client.send(deleteCommand);
-        console.log('[deletePhoto] S3 file deleted:', photo.imageKey);
-      }
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: photo.imageKey,
+      });
+      await s3Client.send(deleteCommand);
+      console.log('[deletePhoto] S3 file deleted:', photo.imageKey);
     } catch (storageError) {
       console.error('[deletePhoto] S3 deletion failed:', storageError);
       // Continue even if S3 deletion fails - we still want to remove from DB

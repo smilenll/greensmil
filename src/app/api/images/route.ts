@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import outputs from '../../../../amplify_outputs.json';
+
+// S3 bucket name from environment (hardcoded for production reliability)
+const BUCKET_NAME = 'amplify-d22ytonhmq8rvo-ma-photogallerybucketb708eb-eofbcbyvznxm';
+const AWS_REGION = process.env.COGNITO_REGION || 'us-east-2';
 
 const s3Client = new S3Client({
-  region: outputs.storage?.aws_region || 'us-east-2',
+  region: AWS_REGION,
   ...(process.env.COGNITO_ACCESS_KEY_ID ? {
     credentials: {
       accessKeyId: process.env.COGNITO_ACCESS_KEY_ID,
@@ -21,17 +24,12 @@ export async function GET(request: NextRequest) {
     return new NextResponse('Missing image key', { status: 400 });
   }
 
-  const bucketName = outputs.storage?.bucket_name;
-  if (!bucketName) {
-    return new NextResponse('Storage not configured', { status: 500 });
-  }
-
   try {
     // Generate signed URL
     const signedUrl = await getSignedUrl(
       s3Client,
       new GetObjectCommand({
-        Bucket: bucketName,
+        Bucket: BUCKET_NAME,
         Key: imageKey,
       }),
       { expiresIn: 3600 }
