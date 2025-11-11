@@ -14,6 +14,7 @@ const { cfnUserPool } = backend.auth.resources.cfnResources;
 cfnUserPool.emailConfiguration = {
   emailSendingAccount: 'DEVELOPER',
   sourceArn: `arn:aws:ses:us-east-2:${backend.auth.resources.userPool.stack.account}:identity/greensmil.com`,
+  from: 'GreenSMiL <noreply@greensmil.com>',
 };
 
 // Customize email verification message template
