@@ -5,6 +5,8 @@ import { useForm } from 'react-hook-form';
 import { signIn } from 'aws-amplify/auth';
 import { Button, Input } from '@/components/ui';
 import { Loader2 } from 'lucide-react';
+import { useRecaptcha } from '@/hooks/use-recaptcha';
+import { verifyRecaptcha } from '@/actions/recaptcha-actions';
 
 interface SignInFormData {
   email: string;
@@ -19,10 +21,26 @@ interface SignInFormProps {
 export function SignInForm({ onSuccess, onForgotPassword }: SignInFormProps) {
   const [error, setError] = useState('');
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<SignInFormData>();
+  const { executeRecaptcha } = useRecaptcha();
 
   const onSubmit = async (data: SignInFormData) => {
     try {
       setError('');
+
+      // Execute reCAPTCHA
+      const recaptchaToken = await executeRecaptcha('login');
+      if (!recaptchaToken) {
+        setError('Failed to verify reCAPTCHA. Please try again.');
+        return;
+      }
+
+      // Verify reCAPTCHA on server
+      const recaptchaResult = await verifyRecaptcha(recaptchaToken, 'login');
+      if (!recaptchaResult.success) {
+        setError(recaptchaResult.error || 'reCAPTCHA verification failed');
+        return;
+      }
+
       await signIn({ username: data.email, password: data.password });
       onSuccess?.();
     } catch (err) {
