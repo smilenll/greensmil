@@ -9,6 +9,23 @@ const { runWithAmplifyServerContext } = createServerRunner({
   config: amplifyConfig,
 });
 
+// Check if user is authenticated
+async function isAuthenticated(): Promise<boolean> {
+  try {
+    const session = await runWithAmplifyServerContext({
+      nextServerContext: { cookies },
+      operation: async (contextSpec) => {
+        return await fetchAuthSession(contextSpec);
+      },
+    });
+
+    return !!session?.tokens?.accessToken;
+  } catch (error) {
+    console.error('Middleware auth error:', error);
+    return false;
+  }
+}
+
 // Check if user has admin role from JWT token
 async function hasAdminRole(): Promise<boolean> {
   try {
@@ -45,11 +62,24 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Check if the request is for photography page
+  if (request.nextUrl.pathname.startsWith('/photography')) {
+    const authenticated = await isAuthenticated();
+
+    if (!authenticated) {
+      // Redirect to sign in page
+      const signInUrl = new URL('/auth/signin', request.url);
+      signInUrl.searchParams.set('redirect', request.nextUrl.pathname);
+      return NextResponse.redirect(signInUrl);
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
     '/admin/:path*',
+    '/photography/:path*',
   ],
 };
