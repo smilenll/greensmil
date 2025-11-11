@@ -1,13 +1,25 @@
-
 import { Camera } from 'lucide-react';
 import { getAllPhotos } from '@/actions/photo-actions';
 import { PhotoGallery } from '@/components/photography/photo-gallery';
+import { requireAuth } from '@/lib/auth-server';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
 export default async function PhotographyPage() {
-  const photos = await getAllPhotos();
+  // Check if user is authenticated
+  let isAuthenticated = false;
+  try {
+    await requireAuth();
+    isAuthenticated = true;
+  } catch {
+    // User not authenticated
+  }
+
+  const photos = isAuthenticated ? await getAllPhotos() : [];
 
   return (
     <div className="pt-20 pb-16">
@@ -31,7 +43,35 @@ export default async function PhotographyPage() {
 
       {/* Photo Gallery - Full Width Container */}
       <div className="pb-16">
-        {photos.length > 0 ? (
+        {!isAuthenticated ? (
+          <div className="container mx-auto px-4">
+            <Card className="max-w-2xl mx-auto">
+              <CardHeader>
+                <CardTitle className="text-center text-2xl">Authentication Required</CardTitle>
+                <CardDescription className="text-center text-base">
+                  To view the photography gallery, you need to be signed in.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <p className="text-center text-muted-foreground">
+                  Register for a free account or sign in to explore my collection of photographic work.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center mt-4">
+                  <Link href="/auth/signup">
+                    <Button size="lg" className="w-full sm:w-auto">
+                      Create Account
+                    </Button>
+                  </Link>
+                  <Link href="/auth/signin">
+                    <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                      Sign In
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : photos.length > 0 ? (
           <PhotoGallery photos={photos} />
         ) : (
           <div className="container mx-auto px-4">
