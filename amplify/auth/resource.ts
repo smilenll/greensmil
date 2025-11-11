@@ -18,6 +18,7 @@ export const auth = defineAuth({
   senders: {
     email: {
       fromEmail: "noreply@greensmil.com",
+      fromName: "Greensmil",
     },
   },
 });
