@@ -14,6 +14,7 @@ const schema = a.schema({
       updatedAt: a.datetime(),
     })
     .authorization((allow) => [
+      allow.guest().to(['read']), // Allow public read access
       allow.authenticated().to(['read']),
       allow.group('admin').to(['create', 'update', 'delete']),
     ]),
@@ -38,5 +39,8 @@ export const data = defineData({
   schema,
   authorizationModes: {
     defaultAuthorizationMode: 'userPool',
+    apiKeyAuthorizationMode: {
+      expiresInDays: 30,
+    },
   },
 });

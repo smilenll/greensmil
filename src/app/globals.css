@@ -122,3 +122,32 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Hide reCAPTCHA badge (disclosure text is shown in the form) */
+.grecaptcha-badge {
+  visibility: hidden;
+}
+
+/* Custom scrollbar styling */
+.dark-scrollbar::-webkit-scrollbar {
+  width: 12px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.5);
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 6px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Firefox scrollbar */
+.dark-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.3) hsl(var(--muted) / 0.5);
+}
