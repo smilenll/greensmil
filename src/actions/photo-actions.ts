@@ -25,6 +25,8 @@ const s3Client = new S3Client({
 });
 
 // Generate cookie-based Amplify Data client for server-side operations
+// For authenticated users, uses userPool auth
+// For guests, uses IAM with unauthenticated identities
 const cookieBasedClient = generateServerClientUsingCookies<Schema>({
   config: outputs,
   cookies,
