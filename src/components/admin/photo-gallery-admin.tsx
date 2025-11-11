@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react';
 import { deletePhoto, type Photo } from '@/actions/photo-actions';
 import { Button } from '@/components/ui/button';
-import { Card, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Heart, Trash2, Loader2 } from 'lucide-react';
-import { AmplifyImage } from '@/components/photography/amplify-image';
+import { PhotoCard } from '@/components/photography/photo-card';
 import { toast } from 'sonner';
 
 interface PhotoGalleryAdminProps {
@@ -70,67 +69,43 @@ export function PhotoGalleryAdmin({ photos }: PhotoGalleryAdminProps) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {localPhotos.map((photo) => {
         const isLoading = loadingImages.has(photo.id);
-        
+
         return (
-          <Card key={photo.id} className="flex flex-col overflow-hidden">
-            {/* Image */}
-            <div className="relative w-full aspect-square bg-muted overflow-hidden">
-              {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <PhotoCard
+            key={photo.id}
+            photo={photo}
+            isLoading={isLoading}
+            onImageLoad={handleImageLoad}
+            onImageError={handleImageError}
+            actions={
+              <>
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <Heart className="h-4 w-4" />
+                  <span>{photo.likeCount} likes</span>
                 </div>
-              )}
-              <div className={isLoading ? 'opacity-0' : 'opacity-100 transition-opacity duration-300'}>
-                <AmplifyImage
-                  imageKey={photo.imageKey}
-                  alt={photo.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  onLoad={() => handleImageLoad(photo.id)}
-                  onError={() => handleImageError(photo.id)}
-                />
-              </div>
-            </div>
 
-            {/* Card Content */}
-            <CardHeader className="flex-shrink-0">
-              <CardTitle className="line-clamp-1">{photo.title}</CardTitle>
-              {photo.description && (
-                <CardDescription className="line-clamp-2 mt-1">
-                  {photo.description}
-                </CardDescription>
-              )}
-            </CardHeader>
-
-            {/* Card Footer with Actions */}
-            <CardFooter className="flex items-center justify-between gap-4 mt-auto border-t pt-4">
-              <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <Heart className="h-4 w-4" />
-                <span>{photo.likeCount} likes</span>
-              </div>
-
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleDelete(photo.id)}
-                disabled={deletingId === photo.id}
-                className="flex-shrink-0"
-              >
-                {deletingId === photo.id ? (
-                  <>
-                    <Trash2 className="h-4 w-4 mr-2 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </>
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDelete(photo.id)}
+                  disabled={deletingId === photo.id}
+                  className="flex-shrink-0"
+                >
+                  {deletingId === photo.id ? (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </>
+                  )}
+                </Button>
+              </>
+            }
+          />
         );
       })}
     </div>
