@@ -15,10 +15,4 @@ export const auth = defineAuth({
       mutable: true,
     },
   },
-  senders: {
-    email: {
-      fromEmail: "noreply@greensmil.com",
-      fromName: "Greensmil",
-    },
-  },
 });
