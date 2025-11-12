@@ -7,56 +7,8 @@ import {
   generateCustomerConfirmationHtml,
   generateCustomerConfirmationText
 } from '@/lib/email/email-templates';
+import { verifyRecaptcha } from './recaptcha-actions';
 import type { ContactFormData } from '@/lib/email/email-provider';
-
-async function verifyRecaptcha(token: string): Promise<{ success: boolean; score?: number; errorCodes?: string[] }> {
-  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-
-  if (!secretKey) {
-    console.error('[ERROR] RECAPTCHA_SECRET_KEY is not set');
-    return { success: false, errorCodes: ['missing-secret-key'] };
-  }
-
-  try {
-    console.log('[DEBUG] Calling Google reCAPTCHA API...');
-    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: `secret=${secretKey}&response=${token}`,
-    });
-
-    const data = await response.json();
-
-    // Log the full response for debugging
-    console.log('[DEBUG] reCAPTCHA verification response:', JSON.stringify(data));
-
-    // reCAPTCHA v3 returns a score between 0.0 (bot) and 1.0 (human)
-    // Recommended threshold is 0.5
-    const SCORE_THRESHOLD = 0.5;
-
-    if (data.success && data.score !== undefined) {
-      const isHuman = data.score >= SCORE_THRESHOLD;
-
-      if (!isHuman) {
-        console.error(`[WARN] reCAPTCHA score too low: ${data.score} (threshold: ${SCORE_THRESHOLD})`);
-      }
-
-      return { success: isHuman, score: data.score };
-    }
-
-    // Log why it failed
-    if (!data.success) {
-      console.error('[ERROR] reCAPTCHA verification failed with error codes:', data['error-codes']);
-    }
-
-    return { success: data.success === true, errorCodes: data['error-codes'] || [] };
-  } catch (error) {
-    console.error('[ERROR] reCAPTCHA verification exception:', error);
-    return { success: false, errorCodes: ['exception'] };
-  }
-}
 
 export async function sendContactEmail(data: ContactFormData) {
   try {
@@ -65,17 +17,14 @@ export async function sendContactEmail(data: ContactFormData) {
     // Verify reCAPTCHA token
     if (data.captchaToken) {
       console.log('[DEBUG] Verifying reCAPTCHA token...');
-      const captchaResult = await verifyRecaptcha(data.captchaToken);
+      const captchaResult = await verifyRecaptcha(data.captchaToken, 'contact_form');
       console.log('[DEBUG] reCAPTCHA result:', captchaResult);
 
       if (!captchaResult.success) {
         console.error('[ERROR] reCAPTCHA verification failed');
-        const errorDetails = captchaResult.errorCodes?.length
-          ? ` Error codes: ${captchaResult.errorCodes.join(', ')}`
-          : '';
         return {
           success: false,
-          message: `reCAPTCHA verification failed.${errorDetails} Please try again or contact us directly.`,
+          message: captchaResult.error || 'reCAPTCHA verification failed. Please try again.',
         };
       }
 

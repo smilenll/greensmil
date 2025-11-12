@@ -225,10 +225,12 @@ export async function togglePhotoLike(photoId: string): Promise<{ success: boole
 
       // Decrement like count
       const { data: photo } = await cookieBasedClient.models.Photo.get({ id: photoId });
+      const newLikeCount = Math.max(0, (photo?.likeCount || 0) - 1);
+
       if (photo) {
         await cookieBasedClient.models.Photo.update({
           id: photoId,
-          likeCount: Math.max(0, (photo.likeCount || 0) - 1),
+          likeCount: newLikeCount,
         });
       }
 
@@ -237,7 +239,7 @@ export async function togglePhotoLike(photoId: string): Promise<{ success: boole
       return {
         success: true,
         isLiked: false,
-        likeCount: Math.max(0, (photo?.likeCount || 0) - 1),
+        likeCount: newLikeCount,
       };
     } else {
       // Like
@@ -248,10 +250,12 @@ export async function togglePhotoLike(photoId: string): Promise<{ success: boole
 
       // Increment like count
       const { data: photo } = await cookieBasedClient.models.Photo.get({ id: photoId });
+      const newLikeCount = (photo?.likeCount || 0) + 1;
+
       if (photo) {
         await cookieBasedClient.models.Photo.update({
           id: photoId,
-          likeCount: (photo.likeCount || 0) + 1,
+          likeCount: newLikeCount,
         });
       }
 
@@ -260,7 +264,7 @@ export async function togglePhotoLike(photoId: string): Promise<{ success: boole
       return {
         success: true,
         isLiked: true,
-        likeCount: (photo?.likeCount || 0) + 1,
+        likeCount: newLikeCount,
       };
     }
   } catch (error) {
