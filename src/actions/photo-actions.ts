@@ -9,7 +9,7 @@ import { cookies } from 'next/headers';
 import outputs from '../../amplify_outputs.json';
 
 // S3 configuration
-const BUCKET_NAME = 'amplify-d22ytonhmq8rvo-ma-photogallerybucketb708eb-eofbcbyvznxm';
+const BUCKET_NAME = 'amplify-d22ytonhmq8rvo-ma-photogallerybucketb708eb-zyv7kknvywi7';
 const AWS_REGION = process.env.COGNITO_REGION || 'us-east-2';
 
 // Initialize S3 client
@@ -62,72 +62,57 @@ export type PhotoUploadResult = {
 export async function uploadPhoto(input: CreatePhotoInput): Promise<PhotoUploadResult> {
   try {
     const user = await requireRole('admin');
-    console.log('[uploadPhoto] Starting upload for user:', user.userId);
-
     const { title, description, file } = input;
 
-    console.log('[uploadPhoto] Input data:', { title, hasFile: !!file, fileName: file?.name });
-
+    // Validate inputs
     if (!title || !file) {
       return { success: false, error: 'Title and file are required' };
     }
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       return { success: false, error: 'Only image files are allowed' };
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      return { success: false, error: 'File size must be less than 5MB' };
-    }
+    console.log('[uploadPhoto] Uploading:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+
+    // Generate S3 key (file is already optimized on client-side)
+    const sanitizedName = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9-]/g, '_');
+    const extension = file.name.split('.').pop() || 'jpg';
+    const fileKey = `photos/${Date.now()}-${sanitizedName}.${extension}`;
+
+    // Get file buffer
+    const fileBuffer = await file.arrayBuffer();
 
     // Upload to S3
-    const fileKey = `photos/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-    const fileBuffer = await file.arrayBuffer();
-    console.log('[uploadPhoto] File key:', fileKey, 'Size:', file.size);
-
-    // Upload to S3 using SDK
-    let uploadResult;
-    try {
-      const putCommand = new PutObjectCommand({
+    await s3Client.send(
+      new PutObjectCommand({
         Bucket: BUCKET_NAME,
         Key: fileKey,
         Body: new Uint8Array(fileBuffer),
         ContentType: file.type,
-      });
+      })
+    );
 
-      uploadResult = await s3Client.send(putCommand);
-      console.log('[uploadPhoto] S3 upload successful:', fileKey);
-    } catch (uploadError) {
-      console.error('[uploadPhoto] S3 upload failed:', uploadError);
-      throw new Error(`Storage upload failed: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
-    }
+    console.log('[uploadPhoto] Uploaded to S3:', fileKey);
 
-    // Construct public S3 URL (photos are configured for guest read access)
+    // Construct public S3 URL
     const imageUrl = `https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${fileKey}`;
-    console.log('[uploadPhoto] Image URL:', imageUrl.substring(0, 50) + '...');
 
     // Create database entry
-    let photoData;
-    try {
-      photoData = await cookieBasedClient.models.Photo.create({
-        title,
-        description: description || null,
-        imageKey: fileKey,
-        imageUrl: imageUrl,
-        uploadedBy: user.userId,
-        likeCount: 0,
-      });
+    const { data: photoData } = await cookieBasedClient.models.Photo.create({
+      title,
+      description: description || null,
+      imageKey: fileKey,
+      imageUrl,
+      uploadedBy: user.userId,
+      likeCount: 0,
+    });
 
-      if (!photoData.data) {
-        throw new Error('No data returned from database');
-      }
-      console.log('[uploadPhoto] Database entry created:', photoData.data.id);
-    } catch (dbError) {
-      console.error('[uploadPhoto] Database creation failed:', dbError);
-      throw new Error(`Database error: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`);
+    if (!photoData) {
+      throw new Error('Failed to create database entry');
     }
+
+    console.log('[uploadPhoto] Success:', photoData.id);
 
     revalidatePath('/photography');
     revalidatePath('/admin/photos');
@@ -135,14 +120,14 @@ export async function uploadPhoto(input: CreatePhotoInput): Promise<PhotoUploadR
     return {
       success: true,
       photo: {
-        id: photoData.data.id,
-        title: photoData.data.title,
-        description: photoData.data.description || undefined,
-        imageUrl: photoData.data.imageUrl!,
-        imageKey: photoData.data.imageKey,
-        uploadedBy: photoData.data.uploadedBy,
-        likeCount: photoData.data.likeCount || 0,
-        createdAt: photoData.data.createdAt!,
+        id: photoData.id,
+        title: photoData.title,
+        description: photoData.description || undefined,
+        imageUrl: photoData.imageUrl!,
+        imageKey: photoData.imageKey,
+        uploadedBy: photoData.uploadedBy,
+        likeCount: photoData.likeCount || 0,
+        createdAt: photoData.createdAt!,
       },
     };
   } catch (error) {

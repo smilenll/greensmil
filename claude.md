@@ -39,9 +39,22 @@ A modern full-stack portfolio and web platform built with Next.js, AWS Amplify, 
 - [ ] Make email templates consistent across all emails
 
 ### Infrastructure & Security
+- [ ] Introduce proper logging system (replace console.log with structured logger)
+  - [ ] Choose logging library (pino, winston, or custom)
+  - [ ] Implement logger utility with log levels
+  - [ ] Replace console.log throughout codebase
+  - [ ] Add request ID tracking for debugging
 - [ ] Migrate to AWS Secrets Manager for sensitive API keys (RESEND_API_KEY, RECAPTCHA_SECRET_KEY)
 - [ ] Add error monitoring/alerting for email failures
 - [ ] Add rate limiting to contact form
+
+### UX Improvements
+- [ ] Enhance loading behaviors throughout the app
+  - [ ] Add loading skeletons for page transitions
+  - [ ] Improve photo gallery loading states
+  - [ ] Add loading indicators for form submissions
+  - [ ] Implement optimistic UI updates where appropriate
+  - [ ] Add progress indicators for long-running operations (image uploads, etc.)
 
 ## 🚀 Tech Stack
 

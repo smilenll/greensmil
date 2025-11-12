@@ -3,7 +3,7 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // S3 bucket name from environment (hardcoded for production reliability)
-const BUCKET_NAME = 'amplify-d22ytonhmq8rvo-ma-photogallerybucketb708eb-eofbcbyvznxm';
+const BUCKET_NAME = 'amplify-d22ytonhmq8rvo-ma-photogallerybucketb708eb-zyv7kknvywi7';
 const AWS_REGION = process.env.COGNITO_REGION || 'us-east-2';
 
 const s3Client = new S3Client({

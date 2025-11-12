@@ -2,6 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone', // Required for AWS Amplify SSR support
+
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb', // Allow up to 10MB for optimized images
+    },
+  },
+
   // Explicitly expose environment variables for AWS Amplify
   env: {
     COGNITO_ACCESS_KEY_ID: process.env.COGNITO_ACCESS_KEY_ID,
