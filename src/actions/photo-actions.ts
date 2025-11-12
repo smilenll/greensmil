@@ -170,6 +170,21 @@ export async function getAllPhotos(): Promise<Photo[]> {
           isLiked = !!like;
         }
 
+        // Get accurate like count from PhotoLike records
+        const { data: allLikes } = await cookieBasedClient.models.PhotoLike.list({
+          filter: { photoId: { eq: photo.id } },
+        });
+        const actualLikeCount = allLikes?.length || 0;
+
+        // If the stored count doesn't match actual, update it silently
+        if (photo.likeCount !== actualLikeCount) {
+          console.log(`[getAllPhotos] Syncing like count for photo ${photo.id}: ${photo.likeCount} -> ${actualLikeCount}`);
+          await cookieBasedClient.models.Photo.update({
+            id: photo.id,
+            likeCount: actualLikeCount,
+          });
+        }
+
         // Generate signed URL for the photo (1 hour expiration)
         const signedUrl = await getSignedUrl(
           s3Client,
@@ -187,7 +202,7 @@ export async function getAllPhotos(): Promise<Photo[]> {
           imageUrl: signedUrl, // Use signed URL instead of public URL
           imageKey: photo.imageKey,
           uploadedBy: photo.uploadedBy,
-          likeCount: photo.likeCount || 0,
+          likeCount: actualLikeCount,
           isLikedByCurrentUser: isLiked,
           createdAt: photo.createdAt!,
         };
@@ -202,9 +217,21 @@ export async function getAllPhotos(): Promise<Photo[]> {
 /**
  * Toggle like on a photo
  */
-export async function togglePhotoLike(photoId: string): Promise<{ success: boolean; isLiked: boolean; likeCount: number }> {
+export async function togglePhotoLike(photoId: string): Promise<{ success: boolean; isLiked: boolean; likeCount: number; error?: string }> {
   try {
     const user = await requireAuth();
+
+    // First, get the photo to ensure it exists
+    const { data: photo } = await cookieBasedClient.models.Photo.get({ id: photoId });
+    if (!photo) {
+      console.error('[togglePhotoLike] Photo not found:', photoId);
+      return {
+        success: false,
+        isLiked: false,
+        likeCount: 0,
+        error: 'Photo not found',
+      };
+    }
 
     // Check if already liked
     const { data: existingLike } = await cookieBasedClient.models.PhotoLike.get({
@@ -212,63 +239,88 @@ export async function togglePhotoLike(photoId: string): Promise<{ success: boole
       userId: user.userId,
     });
 
+    let newLikeCount: number;
+    let isLiked: boolean;
+
     if (existingLike) {
-      // Unlike
-      await cookieBasedClient.models.PhotoLike.delete({
+      // Unlike: Delete the like first
+      const deleteResult = await cookieBasedClient.models.PhotoLike.delete({
         photoId,
         userId: user.userId,
       });
 
-      // Decrement like count
-      const { data: photo } = await cookieBasedClient.models.Photo.get({ id: photoId });
-      const newLikeCount = Math.max(0, (photo?.likeCount || 0) - 1);
-
-      if (photo) {
-        await cookieBasedClient.models.Photo.update({
-          id: photoId,
-          likeCount: newLikeCount,
-        });
+      if (!deleteResult.data) {
+        console.error('[togglePhotoLike] Failed to delete like');
+        return {
+          success: false,
+          isLiked: true,
+          likeCount: photo.likeCount || 0,
+          error: 'Failed to unlike photo',
+        };
       }
 
-      revalidatePath('/photography');
+      // Count all remaining likes for this photo to ensure accuracy
+      const { data: allLikes } = await cookieBasedClient.models.PhotoLike.list({
+        filter: { photoId: { eq: photoId } },
+      });
+      newLikeCount = allLikes?.length || 0;
+      isLiked = false;
 
-      return {
-        success: true,
-        isLiked: false,
-        likeCount: newLikeCount,
-      };
+      console.log('[togglePhotoLike] Unlike - Remaining likes:', newLikeCount);
     } else {
-      // Like
-      await cookieBasedClient.models.PhotoLike.create({
+      // Like: Create the like first
+      const createResult = await cookieBasedClient.models.PhotoLike.create({
         photoId,
         userId: user.userId,
       });
 
-      // Increment like count
-      const { data: photo } = await cookieBasedClient.models.Photo.get({ id: photoId });
-      const newLikeCount = (photo?.likeCount || 0) + 1;
-
-      if (photo) {
-        await cookieBasedClient.models.Photo.update({
-          id: photoId,
-          likeCount: newLikeCount,
-        });
+      if (!createResult.data) {
+        console.error('[togglePhotoLike] Failed to create like');
+        return {
+          success: false,
+          isLiked: false,
+          likeCount: photo.likeCount || 0,
+          error: 'Failed to like photo',
+        };
       }
 
-      revalidatePath('/photography');
+      // Count all likes for this photo to ensure accuracy
+      const { data: allLikes } = await cookieBasedClient.models.PhotoLike.list({
+        filter: { photoId: { eq: photoId } },
+      });
+      newLikeCount = allLikes?.length || 0;
+      isLiked = true;
 
-      return {
-        success: true,
-        isLiked: true,
-        likeCount: newLikeCount,
-      };
+      console.log('[togglePhotoLike] Like - Total likes:', newLikeCount);
     }
+
+    // Update the photo's like count with the accurate count
+    const updateResult = await cookieBasedClient.models.Photo.update({
+      id: photoId,
+      likeCount: newLikeCount,
+    });
+
+    if (!updateResult.data) {
+      console.error('[togglePhotoLike] Failed to update photo like count');
+      // Still return success since the like/unlike operation succeeded
+    }
+
+    console.log('[togglePhotoLike] Success - photoId:', photoId, 'isLiked:', isLiked, 'likeCount:', newLikeCount);
+
+    revalidatePath('/photography');
+
+    return {
+      success: true,
+      isLiked,
+      likeCount: newLikeCount,
+    };
   } catch (error) {
-    console.error('Toggle like error:', error);
+    console.error('[togglePhotoLike] Error:', error);
     return {
       success: false,
       isLiked: false,
       likeCount: 0,
+      error: error instanceof Error ? error.message : 'Failed to toggle like',
     };
   }
 }

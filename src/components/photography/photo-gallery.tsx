@@ -39,21 +39,41 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
       return;
     }
 
+    // Prevent multiple simultaneous likes on the same photo
+    if (likingId === photoId) {
+      console.log('[PhotoGallery] Already processing like for:', photoId);
+      return;
+    }
+
     setLikingId(photoId);
 
-    // Save current state for potential rollback
-    let currentPhoto: Photo | undefined;
-    setPhotos((prevPhotos) => {
-      currentPhoto = prevPhotos.find(p => p.id === photoId);
-      if (!currentPhoto) return prevPhotos;
+    // Capture current state BEFORE any updates
+    const currentPhoto = photos.find(p => p.id === photoId);
+    if (!currentPhoto) {
+      console.error('[PhotoGallery] Photo not found:', photoId);
+      setLikingId(null);
+      return;
+    }
 
-      const optimisticIsLiked = !currentPhoto.isLikedByCurrentUser;
-      const optimisticLikeCount = optimisticIsLiked
-        ? currentPhoto.likeCount + 1
-        : Math.max(0, currentPhoto.likeCount - 1);
+    const originalIsLiked = currentPhoto.isLikedByCurrentUser;
+    const originalLikeCount = currentPhoto.likeCount;
 
-      // Optimistic update
-      return prevPhotos.map((photo) =>
+    // Optimistic update
+    const optimisticIsLiked = !originalIsLiked;
+    const optimisticLikeCount = optimisticIsLiked
+      ? originalLikeCount + 1
+      : Math.max(0, originalLikeCount - 1);
+
+    console.log('[PhotoGallery] Optimistic update:', {
+      photoId,
+      originalIsLiked,
+      originalLikeCount,
+      optimisticIsLiked,
+      optimisticLikeCount,
+    });
+
+    setPhotos((prevPhotos) =>
+      prevPhotos.map((photo) =>
         photo.id === photoId
           ? {
               ...photo,
@@ -61,19 +81,15 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
               likeCount: optimisticLikeCount,
             }
           : photo
-      );
-    });
+      )
+    );
 
-    if (!currentPhoto) {
-      setLikingId(null);
-      return;
-    }
-
+    // Call server action
     const result = await togglePhotoLike(photoId);
     console.log('[PhotoGallery] Server response:', result);
 
     if (result.success) {
-      // Update with actual server response
+      // Update with actual server response for accuracy
       setPhotos((prevPhotos) =>
         prevPhotos.map((photo) =>
           photo.id === photoId
@@ -87,19 +103,23 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
       );
       toast.success(result.isLiked ? 'Photo liked!' : 'Photo unliked');
     } else {
-      // Revert optimistic update on error
+      // Revert to original state on error
+      console.error('[PhotoGallery] Reverting to original state:', {
+        originalIsLiked,
+        originalLikeCount,
+      });
       setPhotos((prevPhotos) =>
         prevPhotos.map((photo) =>
           photo.id === photoId
             ? {
                 ...photo,
-                isLikedByCurrentUser: currentPhoto!.isLikedByCurrentUser,
-                likeCount: currentPhoto!.likeCount,
+                isLikedByCurrentUser: originalIsLiked,
+                likeCount: originalLikeCount,
               }
             : photo
         )
       );
-      toast.error('Failed to like photo');
+      toast.error(result.error || 'Failed to like photo');
     }
 
     setLikingId(null);
