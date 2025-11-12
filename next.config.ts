@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     COGNITO_SECRET_ACCESS_KEY: process.env.COGNITO_SECRET_ACCESS_KEY,
     COGNITO_REGION: process.env.COGNITO_REGION,
     RECAPTCHA_SECRET_KEY: process.env.RECAPTCHA_SECRET_KEY,
+    NEXT_PUBLIC_RECAPTCHA_SITE_KEY: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
   },
   images: {
     remotePatterns: [
