@@ -14,8 +14,17 @@ declare global {
 export function useRecaptcha() {
   const [isReady, setIsReady] = useState(false);
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+  
+  // Disable reCAPTCHA if using placeholder values
+  const isDisabled = !siteKey || siteKey.includes('your_actual') || siteKey === 'your_site_key_here';
 
   useEffect(() => {
+    if (isDisabled) {
+      console.warn('reCAPTCHA disabled for development');
+      setIsReady(true); // Mark as ready so forms work
+      return;
+    }
+    
     if (!siteKey) {
       console.warn('reCAPTCHA site key not configured');
       return;
@@ -56,9 +65,14 @@ export function useRecaptcha() {
       // Cleanup: remove script on unmount if needed
       // Note: We keep it loaded since other components might use it
     };
-  }, [siteKey]);
+  }, [siteKey, isDisabled]);
 
   const executeRecaptcha = async (action: string): Promise<string | null> => {
+    if (isDisabled) {
+      console.warn('reCAPTCHA disabled - returning mock token');
+      return 'mock-token-for-development';
+    }
+    
     if (!siteKey) {
       console.warn('reCAPTCHA site key not configured');
       return null;
