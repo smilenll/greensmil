@@ -2,23 +2,14 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import Script from 'next/script';
 import { Button } from '@/components/ui';
 import { sendContactEmail } from '@/actions/contact-actions';
+import { useRecaptcha } from '@/hooks/use-recaptcha';
 import type { ContactFormData } from '@/lib/email/email-provider';
-
-declare global {
-  interface Window {
-    grecaptcha: {
-      ready: (callback: () => void) => void;
-      execute: (siteKey: string, options: { action: string }) => Promise<string>;
-    };
-  }
-}
 
 export function ContactForm() {
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
+  const { executeRecaptcha } = useRecaptcha();
 
   const {
     register,
@@ -32,37 +23,19 @@ export function ContactForm() {
   const onSubmit = async (data: ContactFormData) => {
     setSubmitMessage(null);
 
-    // Execute reCAPTCHA v3
-    if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && recaptchaLoaded) {
-      try {
-        // Use grecaptcha.ready() to ensure the script is fully loaded
-        await new Promise<void>((resolve) => {
-          window.grecaptcha.ready(() => {
-            resolve();
-          });
-        });
-
-        const token = await window.grecaptcha.execute(
-          process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
-          { action: 'submit_contact_form' }
-        );
-
-        // Call Server Action with captcha token
-        const result = await sendContactEmail({ ...data, captchaToken: token });
-
-        if (result.success) {
-          setSubmitMessage({ type: 'success', text: result.message });
-          reset();
-        } else {
-          setSubmitMessage({ type: 'error', text: result.message });
+    try {
+      // Execute reCAPTCHA if configured
+      let captchaToken: string | undefined;
+      if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
+        captchaToken = await executeRecaptcha('contact_form');
+        if (!captchaToken) {
+          setSubmitMessage({ type: 'error', text: 'reCAPTCHA verification failed. Please try again.' });
+          return;
         }
-      } catch (error) {
-        console.error('Error during form submission:', error);
-        setSubmitMessage({ type: 'error', text: 'reCAPTCHA verification failed. Please try again.' });
       }
-    } else if (!process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
-      // No reCAPTCHA configured, send without it
-      const result = await sendContactEmail(data);
+
+      // Call Server Action with captcha token
+      const result = await sendContactEmail({ ...data, captchaToken });
 
       if (result.success) {
         setSubmitMessage({ type: 'success', text: result.message });
@@ -70,28 +43,14 @@ export function ContactForm() {
       } else {
         setSubmitMessage({ type: 'error', text: result.message });
       }
-    } else {
-      // reCAPTCHA not loaded yet
-      setSubmitMessage({ type: 'error', text: 'Please wait for reCAPTCHA to load and try again.' });
+    } catch (error) {
+      console.error('Error during form submission:', error);
+      setSubmitMessage({ type: 'error', text: 'Something went wrong. Please try again.' });
     }
   };
 
   return (
-    <>
-      {/* Load reCAPTCHA v3 script */}
-      {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && (
-        <Script
-          src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`}
-          onReady={() => {
-            setRecaptchaLoaded(true);
-          }}
-          onError={(e) => {
-            console.error('Failed to load reCAPTCHA script:', e);
-          }}
-        />
-      )}
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <h3 className="text-2xl font-semibold">Send me a message</h3>
 
       {/* Name Field */}
@@ -239,6 +198,5 @@ export function ContactForm() {
         </p>
       )}
     </form>
-    </>
   );
 }
