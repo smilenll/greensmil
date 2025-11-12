@@ -60,7 +60,7 @@ export default function RootLayout({
             <Footer />
           </div>
           <CookieConsent />
-          <Toaster richColors position="top-right" />
+          <Toaster richColors position="bottom-right" />
         </AuthProvider>
       </body>
     </html>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { togglePhotoLike, type Photo } from '@/actions/photo-actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -23,6 +23,16 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const { isAuthenticated } = useAuth();
 
+  // Sync selectedPhoto with photos array when it changes
+  useEffect(() => {
+    if (selectedPhoto) {
+      const updatedPhoto = photos.find(p => p.id === selectedPhoto.id);
+      if (updatedPhoto) {
+        setSelectedPhoto(updatedPhoto);
+      }
+    }
+  }, [photos, selectedPhoto]);
+
   const handleLike = async (photoId: string) => {
     if (!isAuthenticated) {
       toast.error('Please sign in to like photos');
@@ -31,11 +41,41 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
 
     setLikingId(photoId);
 
+    // Save current state for potential rollback
+    let currentPhoto: Photo | undefined;
+    setPhotos((prevPhotos) => {
+      currentPhoto = prevPhotos.find(p => p.id === photoId);
+      if (!currentPhoto) return prevPhotos;
+
+      const optimisticIsLiked = !currentPhoto.isLikedByCurrentUser;
+      const optimisticLikeCount = optimisticIsLiked
+        ? currentPhoto.likeCount + 1
+        : Math.max(0, currentPhoto.likeCount - 1);
+
+      // Optimistic update
+      return prevPhotos.map((photo) =>
+        photo.id === photoId
+          ? {
+              ...photo,
+              isLikedByCurrentUser: optimisticIsLiked,
+              likeCount: optimisticLikeCount,
+            }
+          : photo
+      );
+    });
+
+    if (!currentPhoto) {
+      setLikingId(null);
+      return;
+    }
+
     const result = await togglePhotoLike(photoId);
+    console.log('[PhotoGallery] Server response:', result);
 
     if (result.success) {
-      setPhotos(
-        photos.map((photo) =>
+      // Update with actual server response
+      setPhotos((prevPhotos) =>
+        prevPhotos.map((photo) =>
           photo.id === photoId
             ? {
                 ...photo,
@@ -47,6 +87,18 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
       );
       toast.success(result.isLiked ? 'Photo liked!' : 'Photo unliked');
     } else {
+      // Revert optimistic update on error
+      setPhotos((prevPhotos) =>
+        prevPhotos.map((photo) =>
+          photo.id === photoId
+            ? {
+                ...photo,
+                isLikedByCurrentUser: currentPhoto!.isLikedByCurrentUser,
+                likeCount: currentPhoto!.likeCount,
+              }
+            : photo
+        )
+      );
       toast.error('Failed to like photo');
     }
 

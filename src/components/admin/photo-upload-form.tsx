@@ -8,10 +8,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { uploadPhoto, type CreatePhotoInput } from '@/actions/photo-actions';
+import { optimizeImageClient } from '@/lib/client-image-optimizer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Loader2 } from 'lucide-react';
 
 // Validation schema
 const photoFormSchema = z.object({
@@ -21,7 +22,7 @@ const photoFormSchema = z.object({
     .custom<FileList>()
     .refine((files) => files && files.length > 0, 'Photo is required')
     .refine((files) => files?.[0]?.type.startsWith('image/'), 'Only image files are allowed')
-    .refine((files) => files?.[0]?.size <= 5 * 1024 * 1024, 'File must be less than 5MB'),
+    .refine((files) => files?.[0]?.size <= 40 * 1024 * 1024, 'File must be less than 40MB'),
 });
 
 type PhotoFormData = z.infer<typeof photoFormSchema>;
@@ -29,6 +30,8 @@ type PhotoFormData = z.infer<typeof photoFormSchema>;
 export function PhotoUploadForm() {
   const router = useRouter();
   const [preview, setPreview] = useState<string | null>(null);
+  const [optimizationProgress, setOptimizationProgress] = useState<number>(0);
+  const [isOptimizing, setIsOptimizing] = useState(false);
 
   const {
     register,
@@ -73,21 +76,41 @@ export function PhotoUploadForm() {
       return;
     }
 
-    const input: CreatePhotoInput = {
-      title: data.title.trim(),
-      description: data.description?.trim(),
-      file,
-    };
+    try {
+      // Optimize image on client-side
+      setIsOptimizing(true);
+      setOptimizationProgress(0);
 
-    const result = await uploadPhoto(input);
+      const optimized = await optimizeImageClient(file, (progress) => {
+        setOptimizationProgress(progress);
+      });
 
-    if (result.success) {
-      toast.success('Photo uploaded successfully!');
-      reset();
-      // Consider state management
-      router.refresh();
-    } else {
-      toast.error(result.error || 'Upload failed');
+      setIsOptimizing(false);
+      toast.success(
+        `Image optimized: ${(optimized.originalSize / 1024 / 1024).toFixed(1)}MB → ${(optimized.optimizedSize / 1024 / 1024).toFixed(1)}MB`
+      );
+
+      // Upload optimized image
+      const input: CreatePhotoInput = {
+        title: data.title.trim(),
+        description: data.description?.trim(),
+        file: optimized.file,
+      };
+
+      const result = await uploadPhoto(input);
+
+      if (result.success) {
+        toast.success('Photo uploaded successfully!');
+        reset();
+        setOptimizationProgress(0);
+        router.refresh();
+      } else {
+        toast.error(result.error || 'Upload failed');
+      }
+    } catch (error) {
+      setIsOptimizing(false);
+      setOptimizationProgress(0);
+      toast.error(error instanceof Error ? error.message : 'Optimization failed');
     }
   };
 
@@ -161,13 +184,28 @@ export function PhotoUploadForm() {
         )}
       </div>
 
+      {/* Optimization Progress */}
+      {isOptimizing && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Optimizing image... {optimizationProgress}%</span>
+          </div>
+        </div>
+      )}
+
       {/* Submit */}
       <Button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isSubmitting || isOptimizing}
         className="w-full"
       >
-        {isSubmitting ? (
+        {isOptimizing ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Optimizing... {optimizationProgress}%
+          </>
+        ) : isSubmitting ? (
           <>
             <Upload className="mr-2 h-4 w-4 animate-spin" />
             Uploading...
