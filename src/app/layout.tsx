@@ -5,6 +5,7 @@ import AmplifyClientConfig from "./amplify-client-config";
 import { MainNav, Footer } from '@/components/layout';
 import { AuthProvider } from '@/contexts/auth-context';
 import { CookieConsent } from '@/components/ui/cookie-consent';
+import { GlobalSplashScreen } from '@/components/ui/loading-spinner';
 import { Toaster } from 'sonner';
 
 const geistSans = Geist({
@@ -44,12 +45,31 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const savedTheme = localStorage.getItem('theme');
+                  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+
+                  if (shouldBeDark) {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${pressStart2P.variable} antialiased`}
         suppressHydrationWarning={true}
       >
-       
+        <GlobalSplashScreen />
         <AuthProvider>
           <AmplifyClientConfig />
           <div className="min-h-screen flex flex-col">
