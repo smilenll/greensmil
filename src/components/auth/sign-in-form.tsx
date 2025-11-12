@@ -41,7 +41,14 @@ export function SignInForm({ onSuccess, onForgotPassword }: SignInFormProps) {
         return;
       }
 
-      await signIn({ username: data.email, password: data.password });
+      const signInResult = await signIn({ username: data.email, password: data.password });
+      
+      // Check if user needs to verify their email
+      if (signInResult.nextStep?.signInStep === 'CONFIRM_SIGN_UP') {
+        setError('Please verify your email address before signing in. Check your inbox for a verification code.');
+        return;
+      }
+      
       onSuccess?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign in failed');
