@@ -2,7 +2,7 @@ import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource.js';
 import { data } from './data/resource.js';
 import { storage } from './storage/resource.js';
-import { generateVerificationEmailTemplate, generatePasswordResetTemplate } from '../src/lib/email/cognito-templates.js';
+import { generateVerificationEmailTemplate, generatePasswordResetTemplate } from './cognito-templates.js';
 
 const backend = defineBackend({
   auth,
