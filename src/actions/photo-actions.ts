@@ -2,7 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { generateServerClientUsingCookies } from '@aws-amplify/adapter-nextjs/data';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { Schema } from '../../amplify/data/resource';
 import { requireRole, requireAuth } from '@/lib/auth-server';
 import { cookies } from 'next/headers';
@@ -169,11 +170,21 @@ export async function getAllPhotos(): Promise<Photo[]> {
           isLiked = !!like;
         }
 
+        // Generate signed URL for the photo (1 hour expiration)
+        const signedUrl = await getSignedUrl(
+          s3Client,
+          new GetObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: photo.imageKey,
+          }),
+          { expiresIn: 3600 } // 1 hour
+        );
+
         return {
           id: photo.id,
           title: photo.title,
           description: photo.description || undefined,
-          imageUrl: photo.imageUrl!,
+          imageUrl: signedUrl, // Use signed URL instead of public URL
           imageKey: photo.imageKey,
           uploadedBy: photo.uploadedBy,
           likeCount: photo.likeCount || 0,

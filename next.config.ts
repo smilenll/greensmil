@@ -39,6 +39,11 @@ const nextConfig: NextConfig = {
         hostname: 'www.greensmil.com',
       },
     ],
+    localPatterns: [
+      {
+        pathname: '/**',
+      },
+    ],
     // Image optimization settings for production
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 3600,

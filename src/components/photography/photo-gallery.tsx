@@ -200,7 +200,7 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
                 {/* Image */}
                 <div className="relative w-full aspect-video bg-muted overflow-hidden rounded-t-lg">
                   <AmplifyImage
-                    imageKey={selectedPhoto.imageKey}
+                    imageUrl={selectedPhoto.imageUrl}
                     alt={selectedPhoto.title}
                     fill
                     className="object-contain"

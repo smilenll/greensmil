@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 
 interface AmplifyImageProps {
-  imageKey: string;
+  imageUrl: string;
   alt: string;
   fill?: boolean;
   className?: string;
@@ -14,7 +14,7 @@ interface AmplifyImageProps {
 }
 
 export function AmplifyImage({
-  imageKey,
+  imageUrl,
   alt,
   fill,
   className,
@@ -23,9 +23,6 @@ export function AmplifyImage({
   onError
 }: AmplifyImageProps) {
   const [hasError, setHasError] = useState(false);
-
-  // Use proxy API route to avoid 431 errors from long signed URLs
-  const imageUrl = `/api/images?key=${encodeURIComponent(imageKey)}`;
 
   const handleLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     if (onLoad) {
@@ -37,7 +34,7 @@ export function AmplifyImage({
   const handleError = (error: any) => {
     if (!hasError) {
       setHasError(true);
-      console.error('[AmplifyImage] Failed to load:', imageKey, error);
+      console.error('[AmplifyImage] Failed to load:', imageUrl, error);
       if (onError) {
         onError(error);
       }

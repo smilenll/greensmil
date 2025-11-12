@@ -29,7 +29,7 @@ export function PhotoCard({ photo, isLoading, onImageLoad, onImageError, actions
         )}
         <div className={isLoading ? 'opacity-0' : 'opacity-100 transition-opacity duration-300'}>
           <AmplifyImage
-            imageKey={photo.imageKey}
+            imageUrl={photo.imageUrl}
             alt={photo.title}
             fill
             className="object-cover"
