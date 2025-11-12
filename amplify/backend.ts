@@ -9,15 +9,8 @@ const backend = defineBackend({
   storage,
 });
 
-// Configure Cognito to use SES for email sending
-const { cfnUserPool } = backend.auth.resources.cfnResources;
-cfnUserPool.emailConfiguration = {
-  emailSendingAccount: 'DEVELOPER',
-  sourceArn: `arn:aws:ses:us-east-2:${backend.auth.resources.userPool.stack.account}:identity/greensmil.com`,
-  from: 'GreenSMiL <noreply@greensmil.com>',
-};
-
 // Customize email verification message template
+const { cfnUserPool } = backend.auth.resources.cfnResources;
 cfnUserPool.verificationMessageTemplate = {
   defaultEmailOption: 'CONFIRM_WITH_CODE',
   emailSubject: 'Welcome to Greensmil - Verify Your Email',
