@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
     COGNITO_REGION: process.env.COGNITO_REGION,
     RECAPTCHA_SECRET_KEY: process.env.RECAPTCHA_SECRET_KEY,
     NEXT_PUBLIC_RECAPTCHA_SITE_KEY: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
+    RESEND_TO_EMAIL: process.env.RESEND_TO_EMAIL,
   },
   images: {
     remotePatterns: [
