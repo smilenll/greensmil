@@ -24,7 +24,6 @@ export async function verifyRecaptcha(
   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
 
   if (!secretKey) {
-    console.error('reCAPTCHA secret key not configured');
     return {
       success: false,
       error: 'reCAPTCHA configuration error',
@@ -55,7 +54,6 @@ export async function verifyRecaptcha(
 
     // Check if verification was successful
     if (!data.success) {
-      console.error('reCAPTCHA verification failed:', data['error-codes']);
       return {
         success: false,
         error: 'reCAPTCHA verification failed',
@@ -64,9 +62,6 @@ export async function verifyRecaptcha(
 
     // Check if action matches
     if (data.action !== expectedAction) {
-      console.error(
-        `reCAPTCHA action mismatch: expected "${expectedAction}", got "${data.action}"`
-      );
       return {
         success: false,
         error: 'Invalid reCAPTCHA action',
@@ -76,9 +71,6 @@ export async function verifyRecaptcha(
     // Check score (v3 only)
     const score = data.score ?? 0;
     if (score < minScore) {
-      console.warn(
-        `reCAPTCHA score too low: ${score} (minimum: ${minScore})`
-      );
       return {
         success: false,
         score,
@@ -92,7 +84,6 @@ export async function verifyRecaptcha(
       score,
     };
   } catch (error) {
-    console.error('reCAPTCHA verification error:', error);
     return {
       success: false,
       error: 'Failed to verify reCAPTCHA',
