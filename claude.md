@@ -14,11 +14,11 @@ A modern full-stack portfolio and web platform built with Next.js, AWS Amplify, 
 **Action Items**:
 - [ ] Update local .env: `RESEND_TO_EMAIL=web@greensmil.com` (currently set to smilenlyubenov@gmail.com)
 - [ ] Set environment variables in AWS Amplify Console → Environment variables:
-  - `RESEND_API_KEY=REDACTED_RESEND_KEY`
+  - `RESEND_API_KEY` - Get from Resend dashboard
   - `RESEND_FROM_EMAIL=noreply@greensmil.com`
   - `RESEND_TO_EMAIL=web@greensmil.com`
-  - `RECAPTCHA_SECRET_KEY=REDACTED_RECAPTCHA_SECRET`
-  - `NEXT_PUBLIC_RECAPTCHA_SITE_KEY=REDACTED_RECAPTCHA_SITE_KEY`
+  - `RECAPTCHA_SECRET_KEY` - Get from Google reCAPTCHA console
+  - `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` - Get from Google reCAPTCHA console
 - [ ] Verify greensmil.com domain is verified at https://resend.com/domains
 - [ ] Redeploy application in Amplify Console
 - [ ] Test contact form on production
