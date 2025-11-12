@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { resetPassword, confirmResetPassword } from 'aws-amplify/auth';
+import { resetPassword, confirmResetPassword, resendSignUpCode, confirmSignUp } from 'aws-amplify/auth';
 import { Button, Input } from '@/components/ui';
 import { Loader2 } from 'lucide-react';
 
@@ -29,7 +29,7 @@ const RESET_CODE_KEY = 'password_reset_code';
 
 export function ForgotPasswordForm({ onSuccess, onSwitchToSignIn }: ForgotPasswordFormProps) {
   const [error, setError] = useState('');
-  const [step, setStep] = useState<'email' | 'code' | 'password'>('email');
+  const [step, setStep] = useState<'email' | 'code' | 'password' | 'verify-email'>('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [isResending, setIsResending] = useState(false);
@@ -74,7 +74,17 @@ export function ForgotPasswordForm({ onSuccess, onSwitchToSignIn }: ForgotPasswo
         onSuccess?.();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send reset code');
+      if (err instanceof Error) {
+        if (err.message.includes('Cannot reset password for the user as there is no registered/verified email')) {
+          setStep('verify-email');
+        } else if (err.message.includes('UserNotFoundException')) {
+          setError('No account found with this email address.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('Failed to send reset code');
+      }
     }
   };
 
@@ -139,6 +149,90 @@ export function ForgotPasswordForm({ onSuccess, onSwitchToSignIn }: ForgotPasswo
     setResendMessage('');
     localStorage.removeItem(RESET_CODE_KEY);
   };
+
+  const handleSendVerificationCode = async () => {
+    try {
+      setIsResending(true);
+      setError('');
+      setResendMessage('');
+      await resendSignUpCode({ username: email });
+      setResendMessage('Verification code sent! Check your email.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send verification code');
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const handleVerifyEmail = async (data: CodeFormData) => {
+    try {
+      setError('');
+      await confirmSignUp({ username: email, confirmationCode: data.code });
+      setResendMessage('Email verified! You can now reset your password.');
+      // Go back to email step to retry password reset
+      setTimeout(() => {
+        setStep('email');
+        setResendMessage('');
+      }, 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid verification code');
+    }
+  };
+
+  // Step: Email verification
+  if (step === 'verify-email') {
+    return (
+      <div className="space-y-4">
+        <div className="text-center space-y-2">
+          <h3 className="text-lg font-medium">Email Verification Required</h3>
+          <p className="text-sm text-muted-foreground">
+            Your email address <span className="font-medium">{email}</span> needs to be verified before you can reset your password.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmitCode(handleVerifyEmail)} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="verifyCode" className="text-sm font-medium">Verification Code</label>
+            <Input
+              id="verifyCode"
+              {...registerCode('code', { required: 'Code is required' })}
+              placeholder="123456"
+              autoFocus
+            />
+          </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {resendMessage && <p className="text-sm text-green-600">{resendMessage}</p>}
+
+          <Button type="submit" className="w-full" disabled={isVerifying}>
+            {isVerifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Verify Email
+          </Button>
+        </form>
+
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
+            onClick={handleSendVerificationCode}
+            disabled={isResending}
+          >
+            {isResending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Send Code
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="flex-1"
+            onClick={handleBackToEmail}
+          >
+            Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Step 2: Code verification
   if (step === 'code') {

@@ -10,6 +10,7 @@ interface User {
   username: string;
   email?: string;
   groups?: string[];
+  emailVerified?: boolean;
 }
 
 interface AuthContextType {
@@ -86,7 +87,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         userId: currentUser.userId,
         username: currentUser.username,
         email: (typeof idToken?.payload.email === 'string' ? idToken.payload.email : undefined) || currentUser.signInDetails?.loginId || currentUser.username,
-        groups: groups
+        groups: groups,
+        emailVerified: idToken?.payload.email_verified === true
       };
 
       setUser(userData);

@@ -27,11 +27,12 @@ export function ContactForm() {
       // Execute reCAPTCHA if configured
       let captchaToken: string | undefined;
       if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
-        captchaToken = await executeRecaptcha('contact_form');
-        if (!captchaToken) {
+        const token = await executeRecaptcha('contact_form');
+        if (!token) {
           setSubmitMessage({ type: 'error', text: 'reCAPTCHA verification failed. Please try again.' });
           return;
         }
+        captchaToken = token;
       }
 
       // Call Server Action with captcha token
