@@ -45,6 +45,16 @@ export type Photo = {
   createdAt: string;
 };
 
+export type GetPhotosResponse = {
+  success: true;
+  photos: Photo[];
+  isAuthenticated: boolean;
+} | {
+  success: false;
+  error: string;
+  requiresAuth: boolean;
+};
+
 export type CreatePhotoInput = {
   title: string;
   description?: string;
@@ -142,23 +152,39 @@ export async function uploadPhoto(input: CreatePhotoInput): Promise<PhotoUploadR
 
 /**
  * Get all photos
+ * Returns photos if user is authenticated, or error requiring auth
  */
-export async function getAllPhotos(): Promise<Photo[]> {
+export async function getAllPhotos(): Promise<GetPhotosResponse> {
   try {
-    const { data: photos } = await cookieBasedClient.models.Photo.list();
-
-    if (!photos) return [];
-
-    // Get current user to check likes
+    // Check authentication first
     let currentUserId: string | undefined;
+    let isAuthenticated = false;
+
     try {
       const user = await requireAuth();
       currentUserId = user.userId;
+      isAuthenticated = true;
     } catch {
-      // User not authenticated - that's ok
+      // User not authenticated
+      return {
+        success: false,
+        error: 'Authentication required to view photos',
+        requiresAuth: true,
+      };
     }
 
-    return await Promise.all(
+    // User is authenticated - fetch photos
+    const { data: photos } = await cookieBasedClient.models.Photo.list();
+
+    if (!photos) {
+      return {
+        success: true,
+        photos: [],
+        isAuthenticated: true,
+      };
+    }
+
+    const photoList = await Promise.all(
       photos.map(async (photo) => {
         let isLiked = false;
 
@@ -208,9 +234,19 @@ export async function getAllPhotos(): Promise<Photo[]> {
         };
       })
     );
+
+    return {
+      success: true,
+      photos: photoList,
+      isAuthenticated: true,
+    };
   } catch (error) {
     console.error('Get photos error:', error);
-    return [];
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to load photos',
+      requiresAuth: false,
+    };
   }
 }
 

@@ -1,10 +1,10 @@
 import { getUsersAction } from "@/actions/user-actions";
 import { UsersTable } from "@/components/admin/users-table";
 import { Suspense } from 'react';
-
-// Note: No revalidate needed - admin pages are dynamic by default (use cookies() in layout)
+import { unstable_noStore as noStore } from 'next/cache';
 
 export default function UsersPage() {
+  noStore();
   return (
     <div className="p-6">
       {/* Header - Static */}

@@ -19,7 +19,8 @@ import {
   Camera,
   Upload,
   Image as ImageIcon,
-  Home
+  Home,
+  LayoutDashboard
 } from 'lucide-react';
 import {
   Sidebar,
@@ -119,6 +120,16 @@ export default function AdminSidebar() {
           <SidebarGroupLabel>Administration</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              {/* Dashboard link */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === '/admin'}>
+                  <Link href="/admin">
+                    <LayoutDashboard className="h-4 w-4" />
+                    <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
               {menuItems.map((group) => (
                 <Collapsible
                   key={group.title}

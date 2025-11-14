@@ -1,11 +1,11 @@
 import { getUserCount, getActiveSessions, getSystemStatus } from "@/actions/user-actions";
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-
-// Note: No revalidate needed - admin pages are dynamic by default (use cookies() in layout)
-// They can't be statically generated because they require authentication
+import { DeploymentStatusCard } from '@/components/admin/deployment-status';
+import { unstable_noStore as noStore } from 'next/cache';
 
 export default async function AdminPage() {
+  noStore();
   let users, activeSessions, systemStatus;
 
   // Layout already verified admin role - just fetch data
@@ -59,7 +59,13 @@ export default async function AdminPage() {
           <p className="text-sm text-gray-500 mt-1">Uptime: {systemStatus.uptime}</p>
         </div>
       </div>
-      
+
+      {/* Deployment Status */}
+      <div className="mt-8">
+        <h3 className="text-lg font-medium mb-4">Deployment Status</h3>
+        <DeploymentStatusCard />
+      </div>
+
       <div className="mt-8 bg-white dark:bg-gray-900 p-6 rounded-lg border">
         <h3 className="text-lg font-medium mb-4">Quick Actions</h3>
         <div className="flex gap-4">

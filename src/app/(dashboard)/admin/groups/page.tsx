@@ -1,10 +1,10 @@
 import { getGroups } from "@/actions/group-actions";
 import { GroupsTable } from "@/components/admin/groups-table";
 import { Suspense } from 'react';
-
-// Note: No revalidate needed - admin pages are dynamic by default (use cookies() in layout)
+import { unstable_noStore as noStore } from 'next/cache';
 
 export default function GroupsPage() {
+  noStore();
   return (
     <div className="p-6">
       {/* Header - Static */}

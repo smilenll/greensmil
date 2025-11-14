@@ -1,10 +1,10 @@
 import { getAllPhotos } from '@/actions/photo-actions';
 import { PhotoGalleryAdmin } from '@/components/admin/photo-gallery-admin';
 import { Suspense } from 'react';
-
-// Note: No revalidate needed - admin pages are dynamic by default (use cookies() in layout)
+import { unstable_noStore as noStore } from 'next/cache';
 
 export default function AdminPhotosPage() {
+  noStore();
   return (
     <div className="p-6 space-y-8">
       {/* Header - Static */}
@@ -25,7 +25,20 @@ export default function AdminPhotosPage() {
 
 // Server component for photo gallery
 async function PhotoGalleryServer() {
-  const photos = await getAllPhotos();
+  const response = await getAllPhotos();
+
+  // Admin users should always be authenticated (verified by layout)
+  // But handle edge cases gracefully
+  if (!response.success) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-destructive">Error loading photos: {response.error}</p>
+      </div>
+    );
+  }
+
+  const { photos } = response;
+
   return (
     <>
       <h2 className="text-xl font-semibold mb-4">Uploaded Photos ({photos.length})</h2>

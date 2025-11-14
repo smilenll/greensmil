@@ -1,8 +1,8 @@
 import { PhotoUploadForm } from '@/components/admin/photo-upload-form';
-
-// Note: No revalidate needed - admin pages are dynamic by default (use cookies() in layout)
+import { unstable_noStore as noStore } from 'next/cache';
 
 export default function AdminPhotosUploadPage() {
+  noStore();
   return (
     <div className="p-6 space-y-8">
       {/* Header - Static */}
