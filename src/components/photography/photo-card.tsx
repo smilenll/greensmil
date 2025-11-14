@@ -16,7 +16,7 @@ interface PhotoCardProps {
 
 export function PhotoCard({ photo, isLoading, onImageLoad, onImageError, actions, onClick }: PhotoCardProps) {
   return (
-    <Card className="flex flex-col overflow-hidden py-0 gap-0">
+    <Card className="flex flex-col overflow-hidden py-0 gap-0 h-full">
       {/* Image */}
       <div
         className={`relative w-full aspect-4/3 bg-muted overflow-hidden rounded-t-lg ${onClick ? 'cursor-pointer group' : ''}`}
@@ -42,7 +42,7 @@ export function PhotoCard({ photo, isLoading, onImageLoad, onImageError, actions
 
       {/* Card Content */}
       <CardHeader
-        className={`shrink-0 px-4 py-4 ${onClick ? 'cursor-pointer' : ''}`}
+        className={`flex-1 px-4 py-4 flex flex-col justify-start ${onClick ? 'cursor-pointer' : ''}`}
         onClick={onClick}
       >
         <CardTitle className="line-clamp-1">{photo.title}</CardTitle>
