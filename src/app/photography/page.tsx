@@ -4,13 +4,8 @@ import { PhotoGallery } from '@/components/photography/photo-gallery';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { unstable_noStore as noStore } from 'next/cache';
 
 export default async function PhotographyPage() {
-  // Opt out of static generation - uses cookies for auth
-  noStore();
-
-  // Fetch photos (handles auth internally)
   const response = await getAllPhotos();
 
   return (
