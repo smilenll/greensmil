@@ -2,8 +2,7 @@ import { getAllPhotos } from '@/actions/photo-actions';
 import { PhotoGalleryAdmin } from '@/components/admin/photo-gallery-admin';
 import { Suspense } from 'react';
 
-// Cache for 30 seconds - photos change when uploaded/deleted
-export const revalidate = 30;
+// Note: No revalidate needed - admin pages are dynamic by default (use cookies() in layout)
 
 export default function AdminPhotosPage() {
   return (

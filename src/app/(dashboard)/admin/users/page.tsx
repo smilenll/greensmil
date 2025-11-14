@@ -2,8 +2,7 @@ import { getUsersAction } from "@/actions/user-actions";
 import { UsersTable } from "@/components/admin/users-table";
 import { Suspense } from 'react';
 
-// Cache for 30 seconds - user list changes frequently
-export const revalidate = 30;
+// Note: No revalidate needed - admin pages are dynamic by default (use cookies() in layout)
 
 export default function UsersPage() {
   return (

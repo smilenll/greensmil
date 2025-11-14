@@ -2,8 +2,7 @@ import { getGroups } from "@/actions/group-actions";
 import { GroupsTable } from "@/components/admin/groups-table";
 import { Suspense } from 'react';
 
-// Cache for 60 seconds - groups don't change often
-export const revalidate = 60;
+// Note: No revalidate needed - admin pages are dynamic by default (use cookies() in layout)
 
 export default function GroupsPage() {
   return (

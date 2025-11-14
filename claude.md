@@ -79,3 +79,39 @@ A modern full-stack portfolio and web platform built with Next.js, AWS Amplify, 
 
 ### Forms & Validation
 - **react-hook-form** - Form state management and validation
+
+## ⚠️ Important Constraints & Guidelines
+
+### AWS Amplify Version Compatibility
+**CRITICAL**: This project uses AWS Amplify Gen 2 for hosting and backend infrastructure. Always ensure compatibility with Amplify's supported Next.js versions before upgrading.
+
+- **Supported Next.js versions**: 13.5.0 - 15.9.x (Amplify JS v6)
+- **Current version**: Next.js 15.5.3 (stable)
+- **Do NOT upgrade** to Next.js canary builds or unsupported versions
+- **Before upgrading to Next.js 16**:
+  - Verify AWS Amplify officially supports it
+  - Check Amplify documentation for breaking changes
+  - Test thoroughly in staging environment
+  - Enable PPR (Partial Prerendering) only after Amplify confirms support
+
+### Next.js Features & Limitations
+- **PPR (Partial Prerendering)**: Currently disabled (only available in canary builds)
+  - TODO in next.config.ts to enable when Next.js 16 stable is released
+  - Must verify Amplify support before enabling
+- **Server Components**: Fully supported and used throughout the app
+- **Server Actions**: Enabled with 10MB body size limit for image uploads
+- **Middleware**: Only runs on `/admin` routes for optimal performance
+
+### Authentication Architecture
+- **Hybrid approach**: Server-side security + client-side UX
+  - Server-side: `requireAuth()`, `requireRole()` for all data access
+  - Client-side: `AuthContext` for UI state and optimistic updates
+- **Defense in depth**:
+  - Middleware blocks `/admin` routes for non-admins (returns 404)
+  - Admin layout double-checks authorization with `requireRole('admin')`
+- **No force-dynamic**: All pages use time-based revalidation instead
+  - Photography pages: No revalidation (dynamic on every request for auth checks)
+  - Admin dashboard: 60s cache
+  - Admin users/photos: 30s cache
+  - Admin groups: 60s cache
+  - Photo upload form: 5min cache

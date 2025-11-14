@@ -1,7 +1,6 @@
 import { PhotoUploadForm } from '@/components/admin/photo-upload-form';
 
-// This page is mostly static (just a form), so we can cache it
-export const revalidate = 300; // 5 minutes
+// Note: No revalidate needed - admin pages are dynamic by default (use cookies() in layout)
 
 export default function AdminPhotosUploadPage() {
   return (

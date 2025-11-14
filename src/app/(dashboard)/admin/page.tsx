@@ -2,8 +2,8 @@ import { getUserCount, getActiveSessions, getSystemStatus } from "@/actions/user
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
-// Cache for 60 seconds - reduces server load while keeping data fresh
-export const revalidate = 60;
+// Note: No revalidate needed - admin pages are dynamic by default (use cookies() in layout)
+// They can't be statically generated because they require authentication
 
 export default async function AdminPage() {
   let users, activeSessions, systemStatus;
