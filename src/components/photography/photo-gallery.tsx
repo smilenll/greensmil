@@ -4,12 +4,11 @@ import { useState, useEffect } from 'react';
 import { togglePhotoLike, type Photo } from '@/actions/photo-actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
 import { PhotoCard } from './photo-card';
-import { AmplifyImage } from './amplify-image';
+import { PhotoDialog } from './photo-dialog';
 import { toast } from 'sonner';
 
 interface PhotoGalleryProps {
@@ -151,7 +150,7 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
 
   return (
     <div className="container mx-auto px-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {photos.map((photo) => {
           const isLoading = loadingImages.has(photo.id);
 
@@ -172,7 +171,7 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
                     handleLike(photo.id);
                   }}
                   disabled={likingId === photo.id || !isAuthenticated}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-1 p-0!"
                 >
                   <Heart
                     className={`h-4 w-4 transition-all ${
@@ -211,62 +210,13 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
       )}
 
       {/* Photo Dialog */}
-      <Dialog open={!!selectedPhoto} onOpenChange={(open) => !open && setSelectedPhoto(null)}>
-        <DialogContent className="!max-w-none w-[90vw] max-h-[90vh] p-0 gap-0 overflow-hidden !bg-muted/50 dark:!bg-muted/30">
-          <DialogTitle className="sr-only">{selectedPhoto?.title || 'Photo'}</DialogTitle>
-          <div className="max-h-[90vh] overflow-y-auto px-8 py-8 dark-scrollbar">
-            {selectedPhoto && (
-              <Card className="border-0 shadow-none mt-4 mb-4">
-                {/* Image */}
-                <div className="relative w-full aspect-video bg-muted overflow-hidden rounded-t-lg">
-                  <AmplifyImage
-                    imageUrl={selectedPhoto.imageUrl}
-                    alt={selectedPhoto.title}
-                    fill
-                    className="object-contain"
-                    sizes="90vw"
-                  />
-                </div>
-
-                {/* Card Content */}
-                <CardHeader>
-                  <CardTitle className="text-2xl">{selectedPhoto.title}</CardTitle>
-                  {selectedPhoto.description && (
-                    <CardDescription className="text-base mt-2">
-                      {selectedPhoto.description}
-                    </CardDescription>
-                  )}
-
-                  {/* Likes */}
-                  <div className="flex items-center gap-2 mt-4 pt-4 border-t">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleLike(selectedPhoto.id);
-                      }}
-                      disabled={likingId === selectedPhoto.id || !isAuthenticated}
-                      className="flex items-center gap-2"
-                    >
-                      <Heart
-                        className={`h-4 w-4 transition-all ${
-                          likingId === selectedPhoto.id
-                            ? 'fill-red-500 text-red-500 animate-pulse scale-110'
-                            : selectedPhoto.isLikedByCurrentUser
-                            ? 'fill-red-500 text-red-500'
-                            : ''
-                        }`}
-                      />
-                      <span>{selectedPhoto.likeCount} likes</span>
-                    </Button>
-                  </div>
-                </CardHeader>
-              </Card>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <PhotoDialog
+        photo={selectedPhoto}
+        onClose={() => setSelectedPhoto(null)}
+        onLike={handleLike}
+        likingId={likingId}
+        isAuthenticated={isAuthenticated}
+      />
     </div>
   );
 }

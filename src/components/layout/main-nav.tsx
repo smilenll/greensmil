@@ -18,7 +18,6 @@ const navigationItems = [
 ];
 
 export function MainNav() {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -29,9 +28,6 @@ export function MainNav() {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-
-      // Add background when scrolled
-      setIsScrolled(currentScrollY > 10);
 
       // Hide/show navigation based on scroll direction
       if (currentScrollY > lastScrollY && currentScrollY > 100) {
@@ -49,18 +45,22 @@ export function MainNav() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
+  // Don't render main nav in admin panel
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   const navigationClass = cn(
-    'fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out',
+    'fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ease-in-out shadow-xl rounded-3xl',
+    'w-[95%] max-w-6xl bg-background/20 dark:bg-background/40 backdrop-blur-sm border border-border/50',
     {
-      'transform -translate-y-full': !isVisible,
-      'bg-background/80 backdrop-blur-md border-b border-border': isScrolled,
-      'bg-transparent': !isScrolled,
+      'transform -translate-y-[calc(100%+1rem)]': !isVisible,
     }
   );
 
   return (
     <header className={navigationClass}>
-      <div className="container mx-auto px-4 h-16 flex items-center">
+      <div className="px-3 md:px-4 lg:px-6 h-16 flex items-center">
         {/* Logo - Left side with fixed width */}
         <div className="flex items-center flex-1">
           <Link href="/" className="flex items-center space-x-2" data-test="site-logo">
@@ -76,17 +76,17 @@ export function MainNav() {
 
         {/* Desktop Navigation - Centered */}
         <NavigationMenu className="hidden md:flex">
-          <NavigationMenuList className="flex space-x-6">
+          <NavigationMenuList className="flex space-x-2 lg:space-x-6">
             {navigationItems.map((item) => (
               <NavigationMenuItem key={item.name}>
                 <NavigationMenuLink asChild>
                   <Link
                     href={item.href}
                     className={cn(
-                      'text-sm font-medium transition-colors hover:text-primary px-3 py-2 rounded-md',
+                      'text-sm font-semibold transition-colors hover:text-primary px-2 lg:px-3 py-2 rounded-md whitespace-nowrap',
                       pathname === item.href
                         ? 'text-primary bg-primary/10'
-                        : 'text-muted-foreground'
+                        : 'text-foreground/90'
                     )}
                   >
                     {item.name}
@@ -102,10 +102,10 @@ export function MainNav() {
                   <Link
                     href="/admin"
                     className={cn(
-                      'text-sm font-medium transition-colors hover:text-primary px-3 py-2 rounded-md',
+                      'text-sm font-semibold transition-colors hover:text-primary px-2 lg:px-3 py-2 rounded-md whitespace-nowrap',
                       pathname === '/admin'
                         ? 'text-primary bg-primary/10'
-                        : 'text-muted-foreground'
+                        : 'text-foreground/90'
                     )}
                   >
                     Admin
@@ -117,7 +117,7 @@ export function MainNav() {
         </NavigationMenu>
 
         {/* Desktop Actions - Right side with fixed width matching left */}
-        <div className="hidden md:flex items-center space-x-2 flex-1 justify-end">
+        <div className="hidden md:flex items-center space-x-1 lg:space-x-2 flex-1 justify-end">
           <ThemeToggle data-test="theme-toggle" />
           <UserMenu />
         </div>
@@ -141,10 +141,10 @@ export function MainNav() {
                     href={item.href}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={cn(
-                      'text-sm font-medium transition-colors hover:text-primary px-3 py-2 rounded-md',
+                      'text-sm font-semibold transition-colors hover:text-primary px-3 py-2 rounded-md',
                       pathname === item.href
                         ? 'text-primary bg-primary/10'
-                        : 'text-muted-foreground'
+                        : 'text-foreground/90'
                     )}
                     data-test={`mobile-nav-${item.name.toLowerCase().replace(' ', '-')}`}
                   >
@@ -158,10 +158,10 @@ export function MainNav() {
                     href="/admin"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={cn(
-                      'text-sm font-medium transition-colors hover:text-primary px-3 py-2 rounded-md',
+                      'text-sm font-semibold transition-colors hover:text-primary px-3 py-2 rounded-md',
                       pathname === '/admin'
                         ? 'text-primary bg-primary/10'
-                        : 'text-muted-foreground'
+                        : 'text-foreground/90'
                     )}
                     data-test="mobile-nav-admin"
                   >

@@ -8,3 +8,4 @@ export { Sheet, SheetContent, SheetTrigger } from './sheet';
 export { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
 export { LoadingSpinner } from './loading-spinner';
 export { ErrorDisplay } from './error-display';
+export { ShowMoreText } from './show-more-text';

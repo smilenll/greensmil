@@ -2,16 +2,21 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
-interface RecommendationCardProps {
-  name: string;
-  title: string;
-  relationship: string;
-  date: string;
-  text: string;
+interface ShowMoreTextProps {
+  children: string;
+  lineClamp?: number;
+  className?: string;
+  buttonClassName?: string;
 }
 
-export function RecommendationCard({ name, title, relationship, date, text }: RecommendationCardProps) {
+export function ShowMoreText({
+  children,
+  lineClamp = 4,
+  className,
+  buttonClassName,
+}: ShowMoreTextProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isTruncated, setIsTruncated] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
@@ -26,33 +31,31 @@ export function RecommendationCard({ name, title, relationship, date, text }: Re
     checkTruncation();
     window.addEventListener('resize', checkTruncation);
     return () => window.removeEventListener('resize', checkTruncation);
-  }, [text]);
+  }, [children]);
 
   return (
-    <div className="bg-muted/30 p-6 rounded-lg">
-      <div className="flex flex-col mb-4">
-        <h3 className="text-xl font-semibold">{title}</h3>
-        <p className="text-sm text-muted-foreground">{name}</p>
-        <p className="text-xs text-muted-foreground mt-1">
-          {relationship} • {date}
-        </p>
-      </div>
+    <div className={className}>
       <div
         ref={textRef}
-        className={`text-muted-foreground text-sm whitespace-pre-line leading-relaxed ${
-          isExpanded ? '' : 'line-clamp-4'
-        }`}
+        className={cn(
+          'whitespace-pre-line leading-relaxed',
+          !isExpanded && `line-clamp-${lineClamp}`
+        )}
+        style={!isExpanded ? { display: '-webkit-box', WebkitLineClamp: lineClamp, WebkitBoxOrient: 'vertical', overflow: 'hidden' } : {}}
       >
-        {text}
+        {children}
       </div>
       {isTruncated && (
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="mt-2 text-primary hover:text-primary/80"
+          className={cn(
+            'mt-2 pl-0 text-primary hover:text-primary/80',
+            buttonClassName
+          )}
         >
-          {isExpanded ? 'Show less' : 'Show more'}
+          {isExpanded ? 'Show less...' : 'Show more...'}
         </Button>
       )}
     </div>

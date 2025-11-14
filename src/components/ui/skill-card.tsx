@@ -20,8 +20,8 @@ interface SkillCardProps {
 
 export function SkillCard({ icon, title, technologies }: SkillCardProps) {
   return (
-    <div className="p-6 rounded-lg bg-background border border-border">
-      <div className="h-12 w-12 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+    <div className="p-6 rounded-lg  border border-border shadow-md">
+      <div className="h-12 w-12 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
         <span className="text-primary-foreground text-xl">{icon}</span>
       </div>
       <h3 className="text-xl font-semibold mb-4 text-center">{title}</h3>
@@ -38,7 +38,7 @@ export function SkillCard({ icon, title, technologies }: SkillCardProps) {
                     className="object-contain"
                   />
                 </div>
-                <p className="lg:hidden text-xs text-center">{tech.name}</p>
+                <p className="lg:hidden text-xs text-center mt-1">{tech.name}</p>
               </div>
             );
 

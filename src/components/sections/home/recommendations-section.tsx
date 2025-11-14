@@ -1,5 +1,5 @@
-import { ContentSection } from './home/content-section';
-import { RecommendationCard } from '@/components/ui/recommendation-card';
+import { ContentSection } from './content-section';
+import { RecommendationCard } from './recommendation-card';
 
 interface Recommendation {
   name: string;
@@ -26,7 +26,7 @@ const recommendations: Recommendation[] = [
   },
   {
     name: 'Martin Antonov',
-    title: 'Mathematician and Frontend Architect',
+    title: 'Mathematician and Frontend Architect @ AtScale',
     relationship: 'Martin managed Smilen directly',
     date: 'June 15, 2022',
     text: 'Smilen is an extremely reliable and hard-working developer. He takes on the most difficult of tasks, works quickly and efficiently and produces clean code. It has always been a pleasure, having him on team!',

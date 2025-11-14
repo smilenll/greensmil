@@ -76,7 +76,7 @@ export function Footer() {
           <div className="flex items-center text-muted-foreground text-sm">
             <span>Crafted with</span>
             <Heart className="h-4 w-4 mx-1 text-green-800" />
-            <span>by SmiL</span>
+            <span>by SMiL</span>
           </div>
 
           <div className="text-muted-foreground text-sm">

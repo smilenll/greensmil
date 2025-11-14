@@ -16,10 +16,10 @@ interface PhotoCardProps {
 
 export function PhotoCard({ photo, isLoading, onImageLoad, onImageError, actions, onClick }: PhotoCardProps) {
   return (
-    <Card className="flex flex-col overflow-hidden">
+    <Card className="flex flex-col overflow-hidden py-0 gap-0">
       {/* Image */}
       <div
-        className={`relative w-full aspect-square bg-muted overflow-hidden ${onClick ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
+        className={`relative w-full aspect-4/3 bg-muted overflow-hidden rounded-t-lg ${onClick ? 'cursor-pointer group' : ''}`}
         onClick={onClick}
       >
         {isLoading && (
@@ -27,12 +27,12 @@ export function PhotoCard({ photo, isLoading, onImageLoad, onImageError, actions
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         )}
-        <div className={isLoading ? 'opacity-0' : 'opacity-100 transition-opacity duration-300'}>
+        <div className={`${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300 h-full w-full`}>
           <AmplifyImage
             imageUrl={photo.imageUrl}
             alt={photo.title}
             fill
-            className="object-cover"
+            className={`object-cover transition-transform duration-300 ${onClick ? 'group-hover:scale-105' : ''}`}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             onLoad={() => onImageLoad(photo.id)}
             onError={() => onImageError(photo.id)}
@@ -41,10 +41,13 @@ export function PhotoCard({ photo, isLoading, onImageLoad, onImageError, actions
       </div>
 
       {/* Card Content */}
-      <CardHeader className="flex-shrink-0">
+      <CardHeader
+        className={`shrink-0 px-4 py-4 ${onClick ? 'cursor-pointer' : ''}`}
+        onClick={onClick}
+      >
         <CardTitle className="line-clamp-1">{photo.title}</CardTitle>
         {photo.description && (
-          <CardDescription className="line-clamp-2 mt-1">
+          <CardDescription className="line-clamp-4 mt-1.5">
             {photo.description}
           </CardDescription>
         )}
@@ -52,7 +55,7 @@ export function PhotoCard({ photo, isLoading, onImageLoad, onImageError, actions
 
       {/* Card Footer with Actions */}
       {actions && (
-        <CardFooter className="flex items-center justify-between gap-4 mt-auto border-t pt-4">
+        <CardFooter className="border-t px-4 py-2">
           {actions}
         </CardFooter>
       )}

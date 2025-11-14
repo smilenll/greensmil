@@ -3,7 +3,7 @@ import { AdminSection } from './admin-section';
 
 export function ContactSection() {
   return (
-    <ContentSection>
+    <ContentSection className="bg-muted/20">
       <div className="text-center">
         <h2 className="text-3xl font-bold mb-4">Let&apos;s Work Together</h2>
         <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
@@ -13,11 +13,6 @@ export function ContactSection() {
           <a href={`mailto:${process.env.NEXT_PUBLIC_CONTACT_EMAIL}`} className="text-primary hover:underline">
             📧 {process.env.NEXT_PUBLIC_CONTACT_EMAIL}
           </a>
-        </div>
-
-        {/* Admin-only section */}
-        <div className="mt-12">
-          <AdminSection />
         </div>
       </div>
     </ContentSection>

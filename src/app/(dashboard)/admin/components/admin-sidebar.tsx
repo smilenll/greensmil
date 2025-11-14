@@ -18,7 +18,8 @@ import {
   Activity,
   Camera,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Home
 } from 'lucide-react';
 import {
   Sidebar,
@@ -101,7 +102,16 @@ export default function AdminSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r">
       <SidebarHeader className="border-b p-4">
-        <h2 className="text-lg font-semibold">Admin Panel</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Admin Panel</h2>
+          <Link
+            href="/"
+            className="p-2 hover:bg-accent rounded-md transition-colors"
+            title="Go to main website"
+          >
+            <Home className="h-5 w-5" />
+          </Link>
+        </div>
       </SidebarHeader>
 
       <SidebarContent>

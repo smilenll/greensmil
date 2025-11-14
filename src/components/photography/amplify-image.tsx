@@ -7,8 +7,11 @@ interface AmplifyImageProps {
   imageUrl: string;
   alt: string;
   fill?: boolean;
+  width?: number;
+  height?: number;
   className?: string;
   sizes?: string;
+  style?: React.CSSProperties;
   onLoad?: (width?: number, height?: number) => void;
   onError?: (error: any) => void;
 }
@@ -16,9 +19,12 @@ interface AmplifyImageProps {
 export function AmplifyImage({
   imageUrl,
   alt,
-  fill,
+  fill = false,
+  width,
+  height,
   className,
   sizes,
+  style,
   onLoad,
   onError
 }: AmplifyImageProps) {
@@ -43,19 +49,30 @@ export function AmplifyImage({
 
   if (hasError) {
     return (
-      <div className="flex items-center justify-center h-full bg-muted text-muted-foreground text-sm">
+      <div className="flex items-center justify-center h-full w-full text-muted-foreground text-sm">
         Failed to load image
       </div>
     );
   }
 
+  // When using fill, don't pass width/height
+  const imageProps = fill
+    ? {
+        fill: true as const,
+        sizes: sizes || '100vw',
+      }
+    : {
+        width: width!,
+        height: height!,
+      };
+
   return (
     <Image
       src={imageUrl}
       alt={alt}
-      fill={fill}
+      {...imageProps}
       className={className}
-      sizes={sizes}
+      style={style}
       unoptimized={true} // Bypass Next.js optimization, proxy already serves images
       onLoad={handleLoad}
       onError={handleError}
