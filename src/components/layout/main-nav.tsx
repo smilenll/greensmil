@@ -52,7 +52,7 @@ export function MainNav() {
 
   const navigationClass = cn(
     'fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ease-in-out shadow-xl rounded-3xl',
-    'w-[95%] max-w-6xl bg-background/20 dark:bg-background/40 backdrop-blur-sm border border-border/50',
+    'w-[calc(100%-2rem)] md:w-[calc(100%-4rem)] max-w-6xl bg-background/20 dark:bg-background/40 backdrop-blur-sm border border-border/50',
     {
       'transform -translate-y-[calc(100%+1rem)]': !isVisible,
     }
@@ -60,7 +60,7 @@ export function MainNav() {
 
   return (
     <header className={navigationClass}>
-      <div className="px-3 md:px-4 lg:px-6 h-16 flex items-center">
+      <div className="px-4 lg:px-6 h-16 flex items-center">
         {/* Logo - Left side with fixed width */}
         <div className="flex items-center flex-1">
           <Link href="/" className="flex items-center space-x-2" data-test="site-logo">
@@ -76,7 +76,7 @@ export function MainNav() {
 
         {/* Desktop Navigation - Centered */}
         <NavigationMenu className="hidden md:flex">
-          <NavigationMenuList className="flex space-x-2 lg:space-x-6">
+          <NavigationMenuList className="flex space-x-2 lg:space-x-4">
             {navigationItems.map((item) => (
               <NavigationMenuItem key={item.name}>
                 <NavigationMenuLink asChild>
@@ -133,7 +133,7 @@ export function MainNav() {
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px]" data-test="mobile-menu">
+            <SheetContent side="right" className="w-[300px] sm:w-[400px]" title="Navigation Menu" data-test="mobile-menu">
               <div className="flex flex-col space-y-4 mt-6" data-test="mobile-nav-items">
                 {navigationItems.map((item) => (
                   <Link

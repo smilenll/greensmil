@@ -1,11 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { deletePhoto, type Photo } from '@/actions/photo-actions';
-import { Button } from '@/components/ui/button';
-import { Heart, Trash2, Loader2 } from 'lucide-react';
-import { PhotoCard } from '@/components/photography/photo-card';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { deletePhoto, type Photo } from "@/actions/photo-actions";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
+import { PhotoCard } from "@/components/photography/photo-card";
+import { toast } from "sonner";
+import { PhotoLikeButton } from "../photography/photo-like-button";
 
 interface PhotoGalleryAdminProps {
   photos: Photo[];
@@ -14,17 +15,19 @@ interface PhotoGalleryAdminProps {
 export function PhotoGalleryAdmin({ photos }: PhotoGalleryAdminProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [localPhotos, setLocalPhotos] = useState(photos);
-  const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set(photos.map(p => p.id)));
+  const [loadingImages, setLoadingImages] = useState<Set<string>>(
+    new Set(photos.map((p) => p.id))
+  );
 
   // Update local state when props change (after upload/refresh)
   useEffect(() => {
     setLocalPhotos(photos);
     // Mark all new photos as loading
-    setLoadingImages(new Set(photos.map(p => p.id)));
+    setLoadingImages(new Set(photos.map((p) => p.id)));
   }, [photos]);
 
   const handleDelete = async (photoId: string) => {
-    if (!confirm('Are you sure you want to delete this photo?')) {
+    if (!confirm("Are you sure you want to delete this photo?")) {
       return;
     }
 
@@ -33,16 +36,16 @@ export function PhotoGalleryAdmin({ photos }: PhotoGalleryAdminProps) {
 
     if (result.success) {
       setLocalPhotos(localPhotos.filter((p) => p.id !== photoId));
-      toast.success('Photo deleted successfully');
+      toast.success("Photo deleted successfully");
     } else {
-      toast.error(result.error || 'Failed to delete photo');
+      toast.error(result.error || "Failed to delete photo");
     }
 
     setDeletingId(null);
   };
 
   const handleImageLoad = (photoId: string) => {
-    setLoadingImages(prev => {
+    setLoadingImages((prev) => {
       const next = new Set(prev);
       next.delete(photoId);
       return next;
@@ -50,7 +53,7 @@ export function PhotoGalleryAdmin({ photos }: PhotoGalleryAdminProps) {
   };
 
   const handleImageError = (photoId: string) => {
-    setLoadingImages(prev => {
+    setLoadingImages((prev) => {
       const next = new Set(prev);
       next.delete(photoId);
       return next;
@@ -60,7 +63,8 @@ export function PhotoGalleryAdmin({ photos }: PhotoGalleryAdminProps) {
   if (localPhotos.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        No photos uploaded yet. Use the "Upload Photos" page to add your first photo!
+        No photos uploaded yet. Use the "Upload Photos" page to add your first
+        photo!
       </div>
     );
   }
@@ -78,11 +82,21 @@ export function PhotoGalleryAdmin({ photos }: PhotoGalleryAdminProps) {
             onImageLoad={handleImageLoad}
             onImageError={handleImageError}
             actions={
-              <>
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <Heart className="h-4 w-4" />
-                  <span>{photo.likeCount} likes</span>
-                </div>
+              <div className={"flex w-full justify-between"}>
+                <PhotoLikeButton
+                  photoId={photo.id}
+                  likeCount={photo.likeCount}
+                  isLiked={photo.isLikedByCurrentUser || false}
+                  isLoading={!!photo.id}
+                  isAuthenticated={true}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toast.error("not implemented");
+                  }}
+                  size="sm"
+                  className="gap-1"
+                />
 
                 <Button
                   variant="destructive"
@@ -103,7 +117,7 @@ export function PhotoGalleryAdmin({ photos }: PhotoGalleryAdminProps) {
                     </>
                   )}
                 </Button>
-              </>
+              </div>
             }
           />
         );

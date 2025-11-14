@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { togglePhotoLike, type Photo } from '@/actions/photo-actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
 import { PhotoCard } from './photo-card';
-import { PhotoDialog } from './photo-dialog';
+import { PhotoLikeButton } from './photo-like-button';
 import { toast } from 'sonner';
 
 interface PhotoGalleryProps {
@@ -19,18 +18,7 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
   const [photos, setPhotos] = useState(initialPhotos);
   const [likingId, setLikingId] = useState<string | null>(null);
   const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set(initialPhotos.map(p => p.id)));
-  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const { isAuthenticated } = useAuth();
-
-  // Sync selectedPhoto with photos array when it changes
-  useEffect(() => {
-    if (selectedPhoto) {
-      const updatedPhoto = photos.find(p => p.id === selectedPhoto.id);
-      if (updatedPhoto) {
-        setSelectedPhoto(updatedPhoto);
-      }
-    }
-  }, [photos, selectedPhoto]);
 
   const handleLike = async (photoId: string) => {
     if (!isAuthenticated) {
@@ -155,37 +143,30 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
           const isLoading = loadingImages.has(photo.id);
 
           return (
-            <PhotoCard
-              key={photo.id}
-              photo={photo}
-              isLoading={isLoading}
-              onImageLoad={handleImageLoad}
-              onImageError={handleImageError}
-              onClick={() => setSelectedPhoto(photo)}
-              actions={
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleLike(photo.id);
-                  }}
-                  disabled={likingId === photo.id || !isAuthenticated}
-                  className="flex items-center gap-1 p-0!"
-                >
-                  <Heart
-                    className={`h-4 w-4 transition-all ${
-                      likingId === photo.id
-                        ? 'fill-red-500 text-red-500 animate-pulse scale-110'
-                        : photo.isLikedByCurrentUser
-                        ? 'fill-red-500 text-red-500'
-                        : ''
-                    }`}
+            <Link key={photo.id} href={`/photography/${photo.id}`}>
+              <PhotoCard
+                photo={photo}
+                isLoading={isLoading}
+                onImageLoad={handleImageLoad}
+                onImageError={handleImageError}
+                actions={
+                  <PhotoLikeButton
+                    photoId={photo.id}
+                    likeCount={photo.likeCount}
+                    isLiked={photo.isLikedByCurrentUser || false}
+                    isLoading={likingId === photo.id}
+                    isAuthenticated={isAuthenticated}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleLike(photo.id);
+                    }}
+                    size="sm"
+                    className="gap-1"
                   />
-                  <span>{photo.likeCount} likes</span>
-                </Button>
-              }
-            />
+                }
+              />
+            </Link>
           );
         })}
       </div>
@@ -208,15 +189,6 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
           </Card>
         </div>
       )}
-
-      {/* Photo Dialog */}
-      <PhotoDialog
-        photo={selectedPhoto}
-        onClose={() => setSelectedPhoto(null)}
-        onLike={handleLike}
-        likingId={likingId}
-        isAuthenticated={isAuthenticated}
-      />
     </div>
   );
 }

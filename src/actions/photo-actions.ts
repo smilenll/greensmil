@@ -326,6 +326,75 @@ export async function togglePhotoLike(photoId: string): Promise<{ success: boole
 }
 
 /**
+ * Get a single photo by ID
+ */
+export async function getPhotoById(photoId: string): Promise<Photo | null> {
+  try {
+    const { data: photo } = await cookieBasedClient.models.Photo.get({ id: photoId });
+
+    if (!photo) return null;
+
+    // Get current user to check likes
+    let currentUserId: string | undefined;
+    try {
+      const user = await requireAuth();
+      currentUserId = user.userId;
+    } catch {
+      // User not authenticated - that's ok
+    }
+
+    let isLiked = false;
+    if (currentUserId) {
+      const { data: like } = await cookieBasedClient.models.PhotoLike.get({
+        photoId: photo.id,
+        userId: currentUserId,
+      });
+      isLiked = !!like;
+    }
+
+    // Get accurate like count from PhotoLike records
+    const { data: allLikes } = await cookieBasedClient.models.PhotoLike.list({
+      filter: { photoId: { eq: photo.id } },
+    });
+    const actualLikeCount = allLikes?.length || 0;
+
+    // If the stored count doesn't match actual, update it silently
+    if (photo.likeCount !== actualLikeCount) {
+      console.log(`[getPhotoById] Syncing like count for photo ${photo.id}: ${photo.likeCount} -> ${actualLikeCount}`);
+      await cookieBasedClient.models.Photo.update({
+        id: photo.id,
+        likeCount: actualLikeCount,
+      });
+    }
+
+    // Generate signed URL for the photo (1 hour expiration)
+    const signedUrl = await getSignedUrl(
+      s3Client,
+      new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: photo.imageKey,
+      }),
+      { expiresIn: 3600 } // 1 hour
+    );
+
+    return {
+      id: photo.id,
+      title: photo.title,
+      description: photo.description || undefined,
+      imageUrl: signedUrl, // Use signed URL instead of public URL
+      imageKey: photo.imageKey,
+      uploadedBy: photo.uploadedBy,
+      likeCount: actualLikeCount,
+      isLikedByCurrentUser: isLiked,
+      createdAt: photo.createdAt!,
+    };
+  } catch (error) {
+    console.error('Get photo by ID error:', error);
+    return null;
+  }
+}
+
+/**
  * Delete a photo (Admin only)
  */
 export async function deletePhoto(photoId: string): Promise<{ success: boolean; error?: string }> {

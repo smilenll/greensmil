@@ -1,5 +1,8 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { Github, Linkedin, Mail, Heart } from 'lucide-react';
 
 const footerLinks = {
@@ -16,6 +19,13 @@ const socialLinks = [
 ];
 
 export function Footer() {
+  const pathname = usePathname();
+
+  // Don't render footer in admin panel
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   return (
     <footer className="bg-background border-t border-border mt-auto">
       <div className="container mx-auto px-4 py-12">
