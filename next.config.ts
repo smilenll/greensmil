@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   output: 'standalone', // Required for AWS Amplify SSR support
 
   experimental: {
+    // TODO: Enable PPR when upgrading to Next.js 16 (stable) and verify Amplify support
+    // PPR (Partial Prerendering) is currently only available in Next.js canary builds
+    // Uncomment the line below when Next.js 16 stable is released:
+    // ppr: 'incremental',
     serverActions: {
       bodySizeLimit: '10mb', // Allow up to 10MB for optimized images
     },

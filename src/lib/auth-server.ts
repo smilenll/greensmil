@@ -39,9 +39,13 @@ export async function getAuthenticatedUser(): Promise<ServerUser | null> {
 
     if (!user) return null;
 
+    // Get groups from JWT token
+    const groups = await getUserGroups();
+
     return {
       userId: user.userId,
-      username: user.username
+      username: user.username,
+      groups
     };
   } catch (error) {
     console.error('Server auth error:', error);
@@ -144,6 +148,7 @@ export async function requireAuth(): Promise<ServerUser> {
 
 /**
  * Require specific role for server actions/API routes
+ * Throws error if user doesn't have the required role
  */
 export async function requireRole(role: string): Promise<ServerUser> {
   const user = await requireAuth();
@@ -154,4 +159,24 @@ export async function requireRole(role: string): Promise<ServerUser> {
   }
 
   return user;
+}
+
+/**
+ * Require specific role for server components (pages/layouts)
+ * Automatically redirects to specified path if user doesn't have the required role
+ * This is more elegant than try-catch blocks in components
+ */
+export async function requireRoleOrRedirect(
+  role: string,
+  redirectPath = '/'
+): Promise<ServerUser> {
+  const user = await getAuthenticatedUser();
+
+  if (!user || !(await userHasRole(role))) {
+    const { redirect } = await import('next/navigation');
+    redirect(redirectPath);
+  }
+
+  // TypeScript doesn't know redirect() never returns, so we assert user is non-null here
+  return user!;
 }

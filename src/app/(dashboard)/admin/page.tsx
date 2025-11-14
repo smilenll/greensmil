@@ -2,13 +2,13 @@ import { getUserCount, getActiveSessions, getSystemStatus } from "@/actions/user
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
-// Force dynamic rendering for authenticated pages
-export const dynamic = 'force-dynamic';
+// Cache for 60 seconds - reduces server load while keeping data fresh
+export const revalidate = 60;
 
 export default async function AdminPage() {
   let users, activeSessions, systemStatus;
 
-  // Note: Auth is handled by middleware - if user reaches here, they have admin role
+  // Layout already verified admin role - just fetch data
   try {
     [users, activeSessions, systemStatus] = await Promise.all([
       getUserCount(),

@@ -1,30 +1,19 @@
-'use client';
-
-import { LoadingSpinner } from '@/components';
-import { useAuth } from '@/contexts/auth-context';
 import {
   SidebarProvider,
   SidebarInset,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import AdminSidebar from './admin-sidebar';
+import type { ServerUser } from '@/lib/auth-server';
 
-export default function AdminPanel({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin, loading, getUserGroups } = useAuth();
+interface AdminPanelProps {
+  children: React.ReactNode;
+  user: ServerUser;
+}
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
-  if (!user) {
-    return <div>Please sign in to access this area.</div>;
-  }
-
-  if (!isAdmin) {
-    return <div>Access denied. Admin privileges required.</div>;
-  }
-
-  const userGroups = getUserGroups();
+export default function AdminPanel({ children, user }: AdminPanelProps) {
+  // No auth checks needed - layout already verified admin role
+  // Just render the UI with user data from server
 
   return (
     <SidebarProvider>
@@ -36,8 +25,10 @@ export default function AdminPanel({ children }: { children: React.ReactNode }) 
             <div className="flex-1">
               <div className="flex items-center gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Welcome, {user.email}</p>
-                  <p className="text-xs text-gray-500">Groups: {userGroups.join(', ')}</p>
+                  <p className="text-sm text-gray-600">Welcome, {user.username}</p>
+                  {user.groups && user.groups.length > 0 && (
+                    <p className="text-xs text-gray-500">Groups: {user.groups.join(', ')}</p>
+                  )}
                 </div>
               </div>
             </div>

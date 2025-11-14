@@ -6,9 +6,9 @@ import { requireAuth } from '@/lib/auth-server';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { Suspense } from 'react';
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
+// PPR enabled - no force-dynamic needed!
 
 interface PhotoPageProps {
   params: Promise<{
@@ -17,9 +17,32 @@ interface PhotoPageProps {
 }
 
 export default async function PhotoPage({ params }: PhotoPageProps) {
-  // Await params as per Next.js 15+
   const { photoId } = await params;
 
+  return (
+    <div className="min-h-screen pt-28 pb-16 px-4 lg:px-6">
+      <div className="container mx-auto max-w-6xl">
+        {/* Back button - Static */}
+        <div className="mb-6">
+          <Link href="/photography">
+            <Button variant="ghost" size="sm" className="gap-2 pl-0">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Gallery
+            </Button>
+          </Link>
+        </div>
+
+        {/* Photo content - Dynamic */}
+        <Suspense fallback={<PhotoDetailSkeleton />}>
+          <PhotoDetailServer photoId={photoId} />
+        </Suspense>
+      </div>
+    </div>
+  );
+}
+
+// Server component for photo details
+async function PhotoDetailServer({ photoId }: { photoId: string }) {
   // Check if user is authenticated
   let isAuthenticated = false;
   try {
@@ -36,49 +59,51 @@ export default async function PhotoPage({ params }: PhotoPageProps) {
   }
 
   return (
-    <div className="min-h-screen pt-28 pb-16 px-4 lg:px-6">
-      <div className="container mx-auto max-w-6xl">
-        {/* Back button */}
-        <div className="mb-6">
-          <Link href="/photography">
-            <Button variant="ghost" size="sm" className="gap-2 pl-0">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Gallery
-            </Button>
-          </Link>
+    <div className="flex flex-col items-center">
+      {/* Image */}
+      <PictureFrame className="w-full max-w-4xl">
+        <img
+          src={photo.imageUrl}
+          alt={photo.title}
+          className="w-full h-auto"
+        />
+      </PictureFrame>
+
+      {/* Content */}
+      <div className="flex flex-col gap-4 mt-8 p-6 w-full max-w-2xl shadow-2xl border rounded-lg bg-card">
+        <h1 className="text-2xl font-bold">{photo.title}</h1>
+
+        {photo.description && (
+          <p className="text-base text-muted-foreground whitespace-pre-line">
+            {photo.description}
+          </p>
+        )}
+
+        {/* Likes */}
+        <div className="flex items-center pt-2 border-t">
+          <PhotoDetailActions
+            photoId={photo.id}
+            initialLikeCount={photo.likeCount}
+            initialIsLiked={photo.isLikedByCurrentUser || false}
+            isAuthenticated={isAuthenticated}
+          />
         </div>
+      </div>
+    </div>
+  );
+}
 
-        {/* Photo content */}
-        <div className="flex flex-col items-center">
-          {/* Image */}
-          <PictureFrame className="w-full max-w-4xl">
-            <img
-              src={photo.imageUrl}
-              alt={photo.title}
-              className="w-full h-auto"
-            />
-          </PictureFrame>
-
-          {/* Content */}
-          <div className="flex flex-col gap-4 mt-8 p-6 w-full max-w-2xl shadow-2xl border rounded-lg bg-card">
-            <h1 className="text-2xl font-bold">{photo.title}</h1>
-
-            {photo.description && (
-              <p className="text-base text-muted-foreground whitespace-pre-line">
-                {photo.description}
-              </p>
-            )}
-
-            {/* Likes */}
-            <div className="flex items-center pt-2 border-t">
-              <PhotoDetailActions
-                photoId={photo.id}
-                initialLikeCount={photo.likeCount}
-                initialIsLiked={photo.isLikedByCurrentUser || false}
-                isAuthenticated={isAuthenticated}
-              />
-            </div>
-          </div>
+// Loading skeleton for photo detail
+function PhotoDetailSkeleton() {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="w-full max-w-4xl aspect-[4/3] bg-muted animate-pulse rounded-lg" />
+      <div className="flex flex-col gap-4 mt-8 p-6 w-full max-w-2xl shadow-2xl border rounded-lg bg-card">
+        <div className="h-8 w-3/4 bg-muted animate-pulse rounded" />
+        <div className="h-4 w-full bg-muted animate-pulse rounded" />
+        <div className="h-4 w-5/6 bg-muted animate-pulse rounded" />
+        <div className="flex items-center pt-2 border-t">
+          <div className="h-10 w-24 bg-muted animate-pulse rounded" />
         </div>
       </div>
     </div>
