@@ -8,24 +8,127 @@
      · serverActions
 
    Creating an optimized production build ...
-Failed to compile.
+ ✓ Compiled successfully in 11.6s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/19) ...
+   Generating static pages (4/19) 
+   Generating static pages (9/19) 
+   Generating static pages (14/19) 
+Server auth error: Error: Dynamic server usage: Route /admin couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at s (.next/server/chunks/4586.js:1:28328)
+    at n (.next/server/chunks/3268.js:1:6251)
+    at aH (.next/server/chunks/3268.js:1:27575)
+    at aE (.next/server/chunks/3268.js:1:27150)
+    at <unknown> (.next/server/chunks/3268.js:1:29103)
+    at j (.next/server/chunks/825.js:1:15115)
+    at m (.next/server/chunks/825.js:1:15897)
+    at n (.next/server/chunks/825.js:1:15987)
+    at C (.next/server/chunks/166.js:1:4493)
+    at l (.next/server/app/(dashboard)/admin/page.js:2:8787) {
+  description: "Route /admin couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Server auth error: Error: Dynamic server usage: Route /admin couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at s (.next/server/chunks/4586.js:1:28328)
+    at n (.next/server/chunks/3268.js:1:6251)
+    at aH (.next/server/chunks/3268.js:1:27575)
+    at aE (.next/server/chunks/3268.js:1:27150)
+    at <unknown> (.next/server/chunks/3268.js:1:29103)
+    at j (.next/server/chunks/825.js:1:15115)
+    at m (.next/server/chunks/825.js:1:15897)
+    at n (.next/server/chunks/825.js:1:15987)
+    at E (.next/server/chunks/166.js:1:5358)
+    at l (.next/server/app/(dashboard)/admin/page.js:2:8798) {
+  description: "Route /admin couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Server auth error: Error: Dynamic server usage: Route /admin couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at s (.next/server/chunks/4586.js:1:28328)
+    at n (.next/server/chunks/3268.js:1:6251)
+    at aH (.next/server/chunks/3268.js:1:27575)
+    at aE (.next/server/chunks/3268.js:1:27150)
+    at <unknown> (.next/server/chunks/3268.js:1:29103)
+    at j (.next/server/chunks/825.js:1:15115)
+    at m (.next/server/chunks/825.js:1:15897)
+    at n (.next/server/chunks/825.js:1:15987)
+    at F (.next/server/chunks/166.js:1:5923)
+    at l (.next/server/app/(dashboard)/admin/page.js:2:8809) {
+  description: "Route /admin couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Error getting user count: Error: Authentication required
+    at m (.next/server/chunks/825.js:1:15913)
+    at async n (.next/server/chunks/825.js:1:15981)
+    at async C (.next/server/chunks/166.js:1:4479)
+    at async l (.next/server/app/(dashboard)/admin/page.js:2:8760)
+Error getting active sessions: Error: Authentication required
+    at m (.next/server/chunks/825.js:1:15913)
+    at async n (.next/server/chunks/825.js:1:15981)
+    at async E (.next/server/chunks/166.js:1:5344)
+    at async l (.next/server/app/(dashboard)/admin/page.js:2:8760)
+System health check failed: Error: Authentication required
+    at m (.next/server/chunks/825.js:1:15913)
+    at async n (.next/server/chunks/825.js:1:15981)
+    at async F (.next/server/chunks/166.js:1:5909)
+    at async l (.next/server/app/(dashboard)/admin/page.js:2:8760)
+Server auth error: Error: Dynamic server usage: Route /admin/photos couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at s (.next/server/chunks/4586.js:1:28328)
+    at n (.next/server/chunks/3268.js:1:6251)
+    at aH (.next/server/chunks/3268.js:1:27575)
+    at aE (.next/server/chunks/3268.js:1:27150)
+    at <unknown> (.next/server/chunks/3268.js:1:29103)
+    at j (.next/server/chunks/825.js:1:15115)
+    at m (.next/server/chunks/825.js:1:15897)
+    at s (.next/server/chunks/5272.js:1:7321)
+    at i (.next/server/app/(dashboard)/admin/photos/page.js:1:882) {
+  description: "Route /admin/photos couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+Server auth error: Error: Dynamic server usage: Route /photography couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at s (.next/server/chunks/4586.js:1:28328)
+    at n (.next/server/chunks/3268.js:1:6251)
+    at aH (.next/server/chunks/3268.js:1:27575)
+    at aE (.next/server/chunks/3268.js:1:27150)
+    at <unknown> (.next/server/chunks/3268.js:1:29103)
+    at j (.next/server/chunks/825.js:1:15115)
+    at m (.next/server/chunks/825.js:1:15897)
+    at s (.next/server/chunks/5272.js:1:7321)
+    at l (.next/server/app/photography/page.js:1:713) {
+  description: "Route /photography couldn't be rendered statically because it used `cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+ ✓ Generating static pages (19/19)
+   Finalizing page optimization ...
+   Collecting build traces ...
 
-./src/actions/deployment-actions.ts
-Error:   [31mx[0m Server Actions must be async functions.
+Route (app)                                 Size  First Load JS
+┌ ○ /                                      755 B         161 kB
+├ ○ /_not-found                            131 B         102 kB
+├ ƒ /admin                               4.34 kB         118 kB
+├ ƒ /admin/groups                        3.14 kB         127 kB
+├ ƒ /admin/groups/add                    2.21 kB         113 kB
+├ ƒ /admin/photos                        4.08 kB         129 kB
+├ ƒ /admin/photos/upload                 39.8 kB         173 kB
+├ ƒ /admin/users                         4.13 kB         128 kB
+├ ƒ /admin/users/add                     2.22 kB         113 kB
+├ ○ /apple-icon.png                          0 B            0 B
+├ ○ /auth/signin                           458 B         209 kB
+├ ○ /auth/signup                           459 B         209 kB
+├ ○ /contact                             3.56 kB         172 kB
+├ ○ /cookies                               755 B         161 kB
+├ ○ /icon.png                                0 B            0 B
+├ ƒ /photography                          4.4 kB         159 kB
+├ ƒ /photography/[photoId]               2.67 kB         126 kB
+└ ○ /privacy                               755 B         161 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/255-6080d22baa93e028.js       45.5 kB
+  ├ chunks/4bd1b696-21f374d1156f834a.js  54.2 kB
+  └ other shared chunks (total)          1.88 kB
 
-     ,-[[36;1;4m/home/smilen/Projects/greensmil/src/actions/deployment-actions.ts[0m:108:1]
- [2m105[0m | /**
- [2m106[0m |  * Format duration from seconds to human-readable string
- [2m107[0m |  */
- [2m108[0m | export function formatDuration(seconds: number): string {
-     : [35;1m                ^^^^^^^^^^^^^^[0m
- [2m109[0m |   const minutes = Math.floor(seconds / 60);
- [2m110[0m |   const remainingSeconds = seconds % 60;
-     `----
 
-Import trace for requested module:
-./src/actions/deployment-actions.ts
-./src/components/admin/deployment-status.tsx
+ƒ Middleware                             64.7 kB
 
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
 
-> Build failed because of webpack errors

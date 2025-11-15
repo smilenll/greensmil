@@ -32,13 +32,13 @@ export function PhotoGalleryAdmin({ photos }: PhotoGalleryAdminProps) {
     }
 
     setDeletingId(photoId);
-    const result = await deletePhoto(photoId);
+    const response = await deletePhoto(photoId);
 
-    if (result.success) {
+    if (response.status === 'success') {
       setLocalPhotos(localPhotos.filter((p) => p.id !== photoId));
       toast.success("Photo deleted successfully");
     } else {
-      toast.error(result.error || "Failed to delete photo");
+      toast.error(response.error || "Failed to delete photo");
     }
 
     setDeletingId(null);

@@ -45,18 +45,18 @@ export function PhotoDetailActions({
     setLikeCount(optimisticLikeCount);
 
     // Call server action
-    const result = await togglePhotoLike(photoId);
+    const response = await togglePhotoLike(photoId);
 
-    if (result.success) {
+    if (response.status === 'success') {
       // Update with actual server response
-      setIsLiked(result.isLiked);
-      setLikeCount(result.likeCount);
-      toast.success(result.isLiked ? 'Photo liked!' : 'Photo unliked');
+      setIsLiked(response.data.isLiked);
+      setLikeCount(response.data.likeCount);
+      toast.success(response.data.isLiked ? 'Photo liked!' : 'Photo unliked');
     } else {
       // Revert to original state on error
       setIsLiked(originalIsLiked);
       setLikeCount(originalLikeCount);
-      toast.error(result.error || 'Failed to like photo');
+      toast.error(response.error || 'Failed to like photo');
     }
 
     setIsLoading(false);

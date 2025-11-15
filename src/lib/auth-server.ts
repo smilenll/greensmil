@@ -11,7 +11,7 @@ export interface ServerUser {
   userId: string;
   username: string;
   attributes?: Record<string, string | undefined>;
-  groups?: string[];
+  groups: string[]; // Always defined (defaults to empty array)
 }
 
 /**
@@ -84,7 +84,15 @@ export async function getAuthenticatedUserWithAttributes(): Promise<ServerUser |
       },
     });
 
-    return user;
+    if (!user) return null;
+
+    // Get groups from JWT token
+    const groups = await getUserGroups();
+
+    return {
+      ...user,
+      groups
+    };
   } catch (error) {
     console.error('Server auth with attributes error:', error);
     return null;

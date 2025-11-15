@@ -72,23 +72,23 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
     );
 
     // Call server action
-    const result = await togglePhotoLike(photoId);
-    console.log('[PhotoGallery] Server response:', result);
+    const response = await togglePhotoLike(photoId);
+    console.log('[PhotoGallery] Server response:', response);
 
-    if (result.success) {
+    if (response.status === 'success') {
       // Update with actual server response for accuracy
       setPhotos((prevPhotos) =>
         prevPhotos.map((photo) =>
           photo.id === photoId
             ? {
                 ...photo,
-                isLikedByCurrentUser: result.isLiked,
-                likeCount: result.likeCount,
+                isLikedByCurrentUser: response.data.isLiked,
+                likeCount: response.data.likeCount,
               }
             : photo
         )
       );
-      toast.success(result.isLiked ? 'Photo liked!' : 'Photo unliked');
+      toast.success(response.data.isLiked ? 'Photo liked!' : 'Photo unliked');
     } else {
       // Revert to original state on error
       console.error('[PhotoGallery] Reverting to original state:', {
@@ -106,7 +106,7 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
             : photo
         )
       );
-      toast.error(result.error || 'Failed to like photo');
+      toast.error(response.error || 'Failed to like photo');
     }
 
     setLikingId(null);

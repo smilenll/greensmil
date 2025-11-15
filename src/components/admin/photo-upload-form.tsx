@@ -97,15 +97,15 @@ export function PhotoUploadForm() {
         file: optimized.file,
       };
 
-      const result = await uploadPhoto(input);
+      const response = await uploadPhoto(input);
 
-      if (result.success) {
+      if (response.status === 'success') {
         toast.success('Photo uploaded successfully!');
         reset();
         setOptimizationProgress(0);
         router.refresh();
       } else {
-        toast.error(result.error || 'Upload failed');
+        toast.error(response.error || 'Upload failed');
       }
     } catch (error) {
       setIsOptimizing(false);

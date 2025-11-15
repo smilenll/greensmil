@@ -1,16 +1,15 @@
 import { getGroups } from "@/actions/group-actions";
 import { GroupsTable } from "@/components/admin/groups-table";
 import { Suspense } from 'react';
-import { unstable_noStore as noStore } from 'next/cache';
 
 export default function GroupsPage() {
-  noStore();
+  // No noStore() needed - action handles auth internally (forces dynamic)
   return (
     <div className="p-6">
       {/* Header - Static */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">Groups Management</h1>
-        <p className="text-gray-600 mt-2">Manage user groups and permissions</p>
+        <h1 className="text-3xl font-bold dark:text-gray-100">Groups Management</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">Manage user groups and permissions</p>
       </div>
 
       {/* Groups table - Dynamic */}
@@ -23,8 +22,17 @@ export default function GroupsPage() {
 
 // Server component for groups table
 async function GroupsTableServer() {
-  const groups = await getGroups();
-  return <GroupsTable groups={groups} />;
+  const response = await getGroups();
+
+  if (response.status !== 'success') {
+    return (
+      <div className="text-center py-8">
+        <p className="text-destructive dark:text-red-400">Error loading groups: {response.error}</p>
+      </div>
+    );
+  }
+
+  return <GroupsTable groups={response.data} />;
 }
 
 // Loading skeleton for groups table

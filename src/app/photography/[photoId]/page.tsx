@@ -3,9 +3,9 @@ import { getPhotoById } from '@/actions/photo-actions';
 import { PictureFrame } from '@/components/photography/picture-frame';
 import { PhotoDetailActions } from '@/components/photography/photo-detail-actions';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { unstable_noStore as noStore } from 'next/cache';
 
 interface PhotoPageProps {
   params: Promise<{
@@ -14,17 +14,42 @@ interface PhotoPageProps {
 }
 
 export default async function PhotoPage({ params }: PhotoPageProps) {
-  // Opt out of static generation - uses cookies for auth
-  noStore();
-
+  // No noStore() needed - action handles auth internally (forces dynamic)
   const { photoId } = await params;
 
   // Fetch photo (handles auth internally)
-  const photo = await getPhotoById(photoId);
+  const response = await getPhotoById(photoId);
 
-  if (!photo) {
+  if (response.status === 'unauthorized') {
+    return (
+      <div className="min-h-screen pt-28 pb-16 px-4 lg:px-6">
+        <div className="container mx-auto max-w-2xl">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-center text-2xl">Authentication Required</CardTitle>
+              <CardDescription className="text-center">
+                Please sign in to view this photo.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center gap-4">
+              <Button asChild>
+                <Link href="/auth/signin">Sign In</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/photography">Back to Gallery</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (response.status === 'error') {
     notFound();
   }
+
+  const photo = response.data;
 
   return (
     <div className="min-h-screen pt-28 pb-16 px-4 lg:px-6">

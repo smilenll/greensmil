@@ -1,16 +1,15 @@
 import { getUsersAction } from "@/actions/user-actions";
 import { UsersTable } from "@/components/admin/users-table";
 import { Suspense } from 'react';
-import { unstable_noStore as noStore } from 'next/cache';
 
 export default function UsersPage() {
-  noStore();
+  // No noStore() needed - action handles auth internally (forces dynamic)
   return (
     <div className="p-6">
       {/* Header - Static */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">User Management</h1>
-        <p className="text-gray-600 mt-2">Manage users, roles, and permissions</p>
+        <h1 className="text-3xl font-bold dark:text-gray-100">User Management</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">Manage users, roles, and permissions</p>
       </div>
 
       {/* Users table - Dynamic */}
@@ -23,8 +22,17 @@ export default function UsersPage() {
 
 // Server component for users table
 async function UsersTableServer() {
-  const { users } = await getUsersAction(60);
-  return <UsersTable users={users} />;
+  const response = await getUsersAction(60);
+
+  if (response.status !== 'success') {
+    return (
+      <div className="text-center py-8">
+        <p className="text-destructive dark:text-red-400">Error loading users: {response.error}</p>
+      </div>
+    );
+  }
+
+  return <UsersTable users={response.data.users} />;
 }
 
 // Loading skeleton for users table

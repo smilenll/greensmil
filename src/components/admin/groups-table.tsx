@@ -24,11 +24,16 @@ export function GroupsTable({ groups: initialGroups }: GroupsTableProps) {
 
   const handleDelete = async (groupName: string) => {
     if (!confirm(`Are you sure you want to delete group "${groupName}"?`)) return;
-    
+
     setLoading(groupName);
     try {
-      await deleteGroup(groupName);
-      setGroups(groups.filter(g => g.groupName !== groupName));
+      const response = await deleteGroup(groupName);
+
+      if (response.status === 'success') {
+        setGroups(groups.filter(g => g.groupName !== groupName));
+      } else {
+        alert(`Failed to delete group: ${response.error}`);
+      }
     } catch (error) {
       console.error('Failed to delete group:', error);
       alert('Failed to delete group. Please try again.');
@@ -40,8 +45,13 @@ export function GroupsTable({ groups: initialGroups }: GroupsTableProps) {
   const handleAddUsers = async (groupName: string) => {
     setAddingUsersTo(groupName);
     try {
-      const { users } = await getUsersAction(60);
-      setUsers(users);
+      const response = await getUsersAction(60);
+
+      if (response.status === 'success') {
+        setUsers(response.data.users);
+      } else {
+        alert(`Failed to load users: ${response.error}`);
+      }
     } catch (error) {
       console.error('Failed to load users:', error);
       alert('Failed to load users. Please try again.');
@@ -50,13 +60,18 @@ export function GroupsTable({ groups: initialGroups }: GroupsTableProps) {
 
   const handleAddUserToGroup = async (username: string) => {
     if (!addingUsersTo || loading === username) return;
-    
+
     setLoading(username);
     try {
-      await addUserToGroupAction(username, addingUsersTo);
-      alert('User added to group successfully');
-      // Remove user from list after adding
-      setUsers(users.filter(u => u.username !== username));
+      const response = await addUserToGroupAction(username, addingUsersTo);
+
+      if (response.status === 'success') {
+        alert('User added to group successfully');
+        // Remove user from list after adding
+        setUsers(users.filter(u => u.username !== username));
+      } else {
+        alert(`Failed to add user to group: ${response.error}`);
+      }
     } catch (error) {
       console.error('Failed to add user to group:', error);
       alert('Failed to add user to group. Please try again.');

@@ -1,7 +1,8 @@
 'use server';
 
 import { AmplifyClient, ListJobsCommand, GetJobCommand } from '@aws-sdk/client-amplify';
-import { requireRole } from '@/lib/auth-server';
+import { ActionResponse, success, error } from '@/types/action-response';
+import { withRole } from '@/lib/action-helpers';
 
 // Initialize Amplify client with credentials
 const amplifyClient = new AmplifyClient({
@@ -28,17 +29,14 @@ export interface DeploymentStatus {
  * Get the latest deployment status from AWS Amplify
  * Requires admin role
  */
-export async function getDeploymentStatus(): Promise<DeploymentStatus> {
-  try {
-    // Verify admin role
-    await requireRole('admin');
-
+export async function getDeploymentStatus(): Promise<ActionResponse<DeploymentStatus>> {
+  return withRole<DeploymentStatus>('admin', async (): Promise<ActionResponse<DeploymentStatus>> => {
     const appId = process.env.AMPLIFY_APP_ID;
     const branchName = process.env.AMPLIFY_BRANCH_NAME || 'main';
 
     if (!appId) {
       console.warn('AMPLIFY_APP_ID not set in environment variables');
-      return { status: 'UNAVAILABLE' };
+      return success({ status: 'UNAVAILABLE' } as DeploymentStatus);
     }
 
     // List recent jobs for the branch
@@ -52,10 +50,10 @@ export async function getDeploymentStatus(): Promise<DeploymentStatus> {
     const latestJob = jobsResponse.jobSummaries?.[0];
 
     if (!latestJob) {
-      return {
+      return success({
         status: 'UNAVAILABLE',
         branchName,
-      };
+      } as DeploymentStatus);
     }
 
     // Get detailed job information
@@ -69,7 +67,7 @@ export async function getDeploymentStatus(): Promise<DeploymentStatus> {
     const job = jobDetails.job;
 
     if (!job) {
-      return { status: 'UNAVAILABLE' };
+      return success({ status: 'UNAVAILABLE' } as DeploymentStatus);
     }
 
     // Calculate duration if job is complete
@@ -83,7 +81,7 @@ export async function getDeploymentStatus(): Promise<DeploymentStatus> {
     // Build Amplify Console URL
     const buildUrl = `https://console.aws.amazon.com/amplify/home?region=${process.env.AWS_REGION || 'us-east-1'}#/${appId}/${branchName}/${job.summary?.jobId}`;
 
-    return {
+    return success({
       status: (job.summary?.status as DeploymentStatus['status']) || 'UNAVAILABLE',
       commitMessage: job.summary?.commitMessage,
       commitId: job.summary?.commitId?.substring(0, 7), // Short commit hash
@@ -93,12 +91,7 @@ export async function getDeploymentStatus(): Promise<DeploymentStatus> {
       branchName,
       jobId: job.summary?.jobId,
       buildUrl,
-    };
-  } catch (error) {
-    console.error('Error fetching deployment status:', error);
-    return {
-      status: 'UNAVAILABLE',
-    };
-  }
+    });
+  });
 }
 

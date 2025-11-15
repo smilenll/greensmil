@@ -8,7 +8,8 @@ import {
   AdminAddUserToGroupCommand
 } from '@aws-sdk/client-cognito-identity-provider';
 import outputs from '../../amplify_outputs.json';
-import { requireRole } from '@/lib/auth-server';
+import { ActionResponse, success, error } from '@/types/action-response';
+import { withRole } from '@/lib/action-helpers';
 
 import { Group } from '@/types/group';
 
@@ -34,10 +35,8 @@ function createCognitoClient(): CognitoIdentityProviderClient {
   });
 }
 
-export async function getGroups(): Promise<Group[]> {
-  await requireRole('admin');
-
-  try {
+export async function getGroups(): Promise<ActionResponse<Group[]>> {
+  return withRole('admin', async () => {
     const client = createCognitoClient();
 
     const command = new ListGroupsCommand({
@@ -45,7 +44,7 @@ export async function getGroups(): Promise<Group[]> {
     });
 
     const result = await client.send(command);
-    
+
     const groups: Group[] = [];
     for (const group of result.Groups || []) {
       groups.push({
@@ -57,17 +56,12 @@ export async function getGroups(): Promise<Group[]> {
       });
     }
 
-    return groups;
-  } catch (error) {
-    console.error('Error getting groups:', error);
-    throw new Error(`Failed to get groups: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
+    return success(groups);
+  });
 }
 
-export async function createGroup(groupName: string, description?: string): Promise<void> {
-  await requireRole('admin');
-
-  try {
+export async function createGroup(groupName: string, description?: string): Promise<ActionResponse<void>> {
+  return withRole('admin', async () => {
     const client = createCognitoClient();
 
     const command = new CreateGroupCommand({
@@ -77,16 +71,12 @@ export async function createGroup(groupName: string, description?: string): Prom
     });
 
     await client.send(command);
-  } catch (error) {
-    console.error('Error creating group:', error);
-    throw new Error(`Failed to create group: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
+    return success(undefined);
+  });
 }
 
-export async function deleteGroup(groupName: string): Promise<void> {
-  await requireRole('admin');
-
-  try {
+export async function deleteGroup(groupName: string): Promise<ActionResponse<void>> {
+  return withRole('admin', async () => {
     const client = createCognitoClient();
 
     const command = new DeleteGroupCommand({
@@ -95,16 +85,12 @@ export async function deleteGroup(groupName: string): Promise<void> {
     });
 
     await client.send(command);
-  } catch (error) {
-    console.error('Error deleting group:', error);
-    throw new Error(`Failed to delete group: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
+    return success(undefined);
+  });
 }
 
-export async function addUserToGroupAction(username: string, groupName: string): Promise<void> {
-  await requireRole('admin');
-
-  try {
+export async function addUserToGroupAction(username: string, groupName: string): Promise<ActionResponse<void>> {
+  return withRole('admin', async () => {
     const client = createCognitoClient();
 
     const command = new AdminAddUserToGroupCommand({
@@ -114,8 +100,6 @@ export async function addUserToGroupAction(username: string, groupName: string):
     });
 
     await client.send(command);
-  } catch (error) {
-    console.error('Error adding user to group:', error);
-    throw new Error(`Failed to add user to group: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
+    return success(undefined);
+  });
 }

@@ -21,8 +21,15 @@ export default function UserList() {
     setLoading(true);
     setError(null);
     try {
-      const result = await getUsersAction(60);
-      setUsers(result.users);
+      const response = await getUsersAction(60);
+
+      if (response.status === 'success') {
+        setUsers(response.data.users);
+      } else if (response.status === 'unauthorized') {
+        setError('You need admin privileges to view users');
+      } else {
+        setError(response.error);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load users');
     } finally {

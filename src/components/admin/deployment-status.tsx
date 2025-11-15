@@ -27,10 +27,16 @@ export function DeploymentStatusCard() {
   const fetchStatus = async () => {
     setLoading(true);
     try {
-      const deploymentStatus = await getDeploymentStatus();
-      setStatus(deploymentStatus);
-    } catch (error) {
-      console.error('Failed to fetch deployment status:', error);
+      const response = await getDeploymentStatus();
+      if (response.status === 'success') {
+        setStatus(response.data);
+      } else {
+        console.error('Failed to fetch deployment status:', response.error);
+        setStatus({ status: 'UNAVAILABLE' });
+      }
+    } catch (err) {
+      console.error('Failed to fetch deployment status:', err);
+      setStatus({ status: 'UNAVAILABLE' });
     } finally {
       setLoading(false);
     }
