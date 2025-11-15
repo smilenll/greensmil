@@ -14,10 +14,8 @@ interface PhotoPageProps {
 }
 
 export default async function PhotoPage({ params }: PhotoPageProps) {
-  // No noStore() needed - action handles auth internally (forces dynamic)
   const { photoId } = await params;
 
-  // Fetch photo (handles auth internally)
   const response = await getPhotoById(photoId);
 
   if (response.status === 'unauthorized') {
