@@ -69,6 +69,12 @@ export type CreatePhotoInput = {
   file: File;
 };
 
+export type UpdatePhotoInput = {
+  id: string;
+  title: string;
+  description?: string;
+};
+
 /**
  * Upload a new photo (Admin only)
  */
@@ -396,6 +402,54 @@ export async function getPhotoById(photoId: string): Promise<ActionResponse<Phot
       likeCount: actualLikeCount,
       isLikedByCurrentUser: isLiked,
       createdAt: photo.createdAt!,
+    });
+  });
+}
+
+/**
+ * Update a photo's title and description (Admin only)
+ */
+export async function updatePhoto(input: UpdatePhotoInput): Promise<ActionResponse<Photo>> {
+  return withRole('admin', async () => {
+    const { id, title, description } = input;
+
+    if (!title) {
+      return error('Title is required');
+    }
+
+    // Update photo record
+    const { data: updatedPhoto } = await cookieBasedClient.models.Photo.update({
+      id,
+      title,
+      description: description || null,
+    });
+
+    if (!updatedPhoto) {
+      return error('Failed to update photo');
+    }
+
+    // Generate signed URL for the updated photo
+    const signedUrl = await getSignedUrl(
+      s3Client,
+      new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: updatedPhoto.imageKey,
+      }),
+      { expiresIn: 3600 }
+    );
+
+    revalidatePath('/photography');
+    revalidatePath('/admin/photos');
+
+    return success({
+      id: updatedPhoto.id,
+      title: updatedPhoto.title,
+      description: updatedPhoto.description || undefined,
+      imageUrl: signedUrl,
+      imageKey: updatedPhoto.imageKey,
+      uploadedBy: updatedPhoto.uploadedBy,
+      likeCount: updatedPhoto.likeCount || 0,
+      createdAt: updatedPhoto.createdAt!,
     });
   });
 }

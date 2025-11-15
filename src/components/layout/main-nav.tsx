@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 
 const navigationItems = [
   { name: 'Home', href: '/' },
-  { name: 'Photography', href: '/photography' },
+  { name: 'My Photography', href: '/photography' },
   { name: 'Contact Me', href: '/contact' },
 ];
 
