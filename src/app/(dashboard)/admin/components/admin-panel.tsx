@@ -5,6 +5,7 @@ import {
 } from '@/components/ui/sidebar';
 import AdminSidebar from './admin-sidebar';
 import type { ServerUser } from '@/lib/auth-server';
+import { ThemeToggle } from '@/components/layout/theme-toggle';
 
 interface AdminPanelProps {
   children: React.ReactNode;
@@ -25,13 +26,14 @@ export default function AdminPanel({ children, user }: AdminPanelProps) {
             <div className="flex-1">
               <div className="flex items-center gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Welcome, {user.username}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Welcome, {user.username}</p>
                   {user.groups && user.groups.length > 0 && (
-                    <p className="text-xs text-gray-500">Groups: {user.groups.join(', ')}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Groups: {user.groups.join(', ')}</p>
                   )}
                 </div>
               </div>
             </div>
+            <ThemeToggle data-test="admin-theme-toggle" />
           </header>
           <div className="flex-1 overflow-auto">
             {children}

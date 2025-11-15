@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 export default async function PhotographyPage() {
+  // No noStore() needed! Action handles auth internally with ActionResponse
   const response = await getAllPhotos();
 
   return (
@@ -30,7 +31,7 @@ export default async function PhotographyPage() {
 
       {/* Gallery Content */}
       <div className="pb-16">
-        {!response.success && response.requiresAuth ? (
+        {response.status === 'unauthorized' ? (
           // Auth Required
           <div className="container mx-auto px-4">
             <Card className="max-w-2xl mx-auto">
@@ -59,7 +60,7 @@ export default async function PhotographyPage() {
               </CardContent>
             </Card>
           </div>
-        ) : !response.success ? (
+        ) : response.status === 'error' ? (
           // Error
           <div className="container mx-auto px-4">
             <Card className="max-w-2xl mx-auto border-destructive">
@@ -71,9 +72,9 @@ export default async function PhotographyPage() {
               </CardHeader>
             </Card>
           </div>
-        ) : response.photos.length > 0 ? (
-          // Photos
-          <PhotoGallery photos={response.photos} />
+        ) : response.data.photos.length > 0 ? (
+          // Photos - TypeScript knows response.status === 'success' here
+          <PhotoGallery photos={response.data.photos} />
         ) : (
           // Empty State
           <div className="container mx-auto px-4">

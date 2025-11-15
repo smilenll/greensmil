@@ -8,6 +8,7 @@ import type { Schema } from '../../amplify/data/resource';
 import { requireRole, requireAuth } from '@/lib/auth-server';
 import { cookies } from 'next/headers';
 import outputs from '../../amplify_outputs.json';
+import { ActionResponse, success, error, unauthorized } from '@/types/action-response';
 
 // S3 configuration
 const BUCKET_NAME = 'amplify-d22ytonhmq8rvo-ma-photogallerybucketb708eb-zyv7kknvywi7';
@@ -45,6 +46,12 @@ export type Photo = {
   createdAt: string;
 };
 
+export type PhotosData = {
+  photos: Photo[];
+  isAuthenticated: boolean;
+};
+
+// Deprecated: Use ActionResponse<PhotosData> instead
 export type GetPhotosResponse = {
   success: true;
   photos: Photo[];
@@ -152,36 +159,29 @@ export async function uploadPhoto(input: CreatePhotoInput): Promise<PhotoUploadR
 
 /**
  * Get all photos
- * Returns photos if user is authenticated, or error requiring auth
+ * Returns photos if user is authenticated, or unauthorized response
  */
-export async function getAllPhotos(): Promise<GetPhotosResponse> {
+export async function getAllPhotos(): Promise<ActionResponse<PhotosData>> {
   try {
     // Check authentication first
     let currentUserId: string | undefined;
-    let isAuthenticated = false;
 
     try {
       const user = await requireAuth();
       currentUserId = user.userId;
-      isAuthenticated = true;
     } catch {
       // User not authenticated
-      return {
-        success: false,
-        error: 'Authentication required to view photos',
-        requiresAuth: true,
-      };
+      return unauthorized('Authentication required to view photos');
     }
 
     // User is authenticated - fetch photos
     const { data: photos } = await cookieBasedClient.models.Photo.list();
 
     if (!photos) {
-      return {
-        success: true,
+      return success({
         photos: [],
         isAuthenticated: true,
-      };
+      });
     }
 
     const photoList = await Promise.all(
@@ -235,18 +235,13 @@ export async function getAllPhotos(): Promise<GetPhotosResponse> {
       })
     );
 
-    return {
-      success: true,
+    return success({
       photos: photoList,
       isAuthenticated: true,
-    };
-  } catch (error) {
-    console.error('Get photos error:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to load photos',
-      requiresAuth: false,
-    };
+    });
+  } catch (err) {
+    console.error('Get photos error:', err);
+    return error(err instanceof Error ? err.message : 'Failed to load photos');
   }
 }
 

@@ -58,34 +58,34 @@ export function DeploymentStatusCard() {
   const getStatusColor = () => {
     switch (status.status) {
       case 'SUCCEED':
-        return 'text-green-600 bg-green-50 border-green-200';
+        return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800';
       case 'FAILED':
       case 'CANCELLED':
-        return 'text-red-600 bg-red-50 border-red-200';
+        return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800';
       case 'RUNNING':
       case 'PROVISIONING':
-        return 'text-blue-600 bg-blue-50 border-blue-200';
+        return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800';
       case 'PENDING':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+        return 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-800';
       default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
+        return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-950 border-gray-200 dark:border-gray-800';
     }
   };
 
   const getStatusIcon = () => {
     switch (status.status) {
       case 'SUCCEED':
-        return <CheckCircle2 className="h-5 w-5 text-green-600" />;
+        return <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />;
       case 'FAILED':
       case 'CANCELLED':
-        return <XCircle className="h-5 w-5 text-red-600" />;
+        return <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />;
       case 'RUNNING':
       case 'PROVISIONING':
-        return <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />;
+        return <Loader2 className="h-5 w-5 text-blue-600 dark:text-blue-400 animate-spin" />;
       case 'PENDING':
-        return <Clock className="h-5 w-5 text-yellow-600" />;
+        return <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />;
       default:
-        return <Clock className="h-5 w-5 text-gray-600" />;
+        return <Clock className="h-5 w-5 text-gray-600 dark:text-gray-400" />;
     }
   };
 

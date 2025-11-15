@@ -1,20 +1,19 @@
 import { getAllPhotos } from '@/actions/photo-actions';
 import { PhotoGalleryAdmin } from '@/components/admin/photo-gallery-admin';
 import { Suspense } from 'react';
-import { unstable_noStore as noStore } from 'next/cache';
 
 export default function AdminPhotosPage() {
-  noStore();
+  // No noStore() needed - action handles auth internally
   return (
     <div className="p-6 space-y-8">
       {/* Header - Static */}
       <div>
-        <h1 className="text-3xl font-bold">Photo Gallery</h1>
-        <p className="text-gray-600 mt-2">Manage your photography gallery</p>
+        <h1 className="text-3xl font-bold dark:text-gray-100">Photo Gallery</h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">Manage your photography gallery</p>
       </div>
 
       {/* Photo Gallery - Dynamic */}
-      <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border">
+      <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border dark:border-gray-700">
         <Suspense fallback={<PhotoGallerySkeleton />}>
           <PhotoGalleryServer />
         </Suspense>
@@ -29,19 +28,19 @@ async function PhotoGalleryServer() {
 
   // Admin users should always be authenticated (verified by layout)
   // But handle edge cases gracefully
-  if (!response.success) {
+  if (response.status === 'error' || response.status === 'unauthorized') {
     return (
       <div className="text-center py-8">
-        <p className="text-destructive">Error loading photos: {response.error}</p>
+        <p className="text-destructive dark:text-red-400">Error loading photos: {response.error}</p>
       </div>
     );
   }
 
-  const { photos } = response;
+  const { photos } = response.data;
 
   return (
     <>
-      <h2 className="text-xl font-semibold mb-4">Uploaded Photos ({photos.length})</h2>
+      <h2 className="text-xl font-semibold dark:text-gray-100 mb-4">Uploaded Photos ({photos.length})</h2>
       <PhotoGalleryAdmin photos={photos} />
     </>
   );

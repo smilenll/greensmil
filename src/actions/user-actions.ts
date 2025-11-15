@@ -19,6 +19,7 @@ import outputs from '../../amplify_outputs.json';
 import { requireRole } from '@/lib/auth-server';
 
 import { User, PaginatedUsersResult } from '@/types/user';
+import { ActionResponse, success, error, unauthorized } from '@/types/action-response';
 
 // Legacy export for backward compatibility
 export type AmplifyUser = User;
@@ -43,11 +44,11 @@ function createCognitoClient(): CognitoIdentityProviderClient {
 }
 
 // Get exact user count (requires pagination through all users)
-export async function getUserCount(): Promise<number> {
-  // Require admin role before executing
-  await requireRole('admin');
-
+export async function getUserCount(): Promise<ActionResponse<number>> {
   try {
+    // Check admin role
+    await requireRole('admin');
+
     const client = createCognitoClient();
 
     let totalCount = 0;
@@ -65,10 +66,16 @@ export async function getUserCount(): Promise<number> {
       paginationToken = result.PaginationToken;
     } while (paginationToken);
 
-    return totalCount;
-  } catch (error) {
-    console.error('Error getting user count:', error);
-    throw new Error(`Failed to get user count: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    return success(totalCount);
+  } catch (err) {
+    console.error('Error getting user count:', err);
+
+    // Check if it's an auth error
+    if (err instanceof Error && (err.message.includes('Unauthorized') || err.message.includes('not authorized'))) {
+      return unauthorized('Admin access required to view user count');
+    }
+
+    return error(err instanceof Error ? err.message : 'Failed to get user count');
   }
 }
 
@@ -98,10 +105,11 @@ export async function getApproximateUserCount(): Promise<{ count: number; isAppr
   }
 }
 
-export async function getActiveSessions(): Promise<number> {
-  await requireRole('admin');
-
+export async function getActiveSessions(): Promise<ActionResponse<number>> {
   try {
+    // Check admin role
+    await requireRole('admin');
+
     const client = createCognitoClient();
 
     const command = new ListUsersCommand({
@@ -110,27 +118,39 @@ export async function getActiveSessions(): Promise<number> {
     });
 
     const result = await client.send(command);
-    
+
     // Count users with recent activity (last 24 hours)
     const activeSessions = result.Users?.filter(user => {
       const lastModified = user.UserLastModifiedDate;
       if (!lastModified) return false;
-      
+
       const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
       return lastModified > dayAgo;
     }).length || 0;
 
-    return activeSessions;
-  } catch (error) {
-    console.error('Error getting active sessions:', error);
-    return 0;
+    return success(activeSessions);
+  } catch (err) {
+    console.error('Error getting active sessions:', err);
+
+    // Check if it's an auth error
+    if (err instanceof Error && (err.message.includes('Unauthorized') || err.message.includes('not authorized'))) {
+      return unauthorized('Admin access required to view active sessions');
+    }
+
+    return error(err instanceof Error ? err.message : 'Failed to get active sessions');
   }
 }
 
-export async function getSystemStatus(): Promise<{ status: 'Online' | 'Degraded' | 'Offline'; uptime: string }> {
-  await requireRole('admin');
+export type SystemStatus = {
+  status: 'Online' | 'Degraded' | 'Offline';
+  uptime: string;
+};
 
+export async function getSystemStatus(): Promise<ActionResponse<SystemStatus>> {
   try {
+    // Check admin role
+    await requireRole('admin');
+
     // Simple health check - try to connect to Cognito
     const client = createCognitoClient();
 
@@ -140,17 +160,24 @@ export async function getSystemStatus(): Promise<{ status: 'Online' | 'Degraded'
     });
 
     await client.send(command);
-    
-    return {
+
+    return success({
       status: 'Online',
       uptime: '99.9%'
-    };
-  } catch (error) {
-    console.error('System health check failed:', error);
-    return {
+    });
+  } catch (err) {
+    console.error('System health check failed:', err);
+
+    // Check if it's an auth error
+    if (err instanceof Error && (err.message.includes('Unauthorized') || err.message.includes('not authorized'))) {
+      return unauthorized('Admin access required to view system status');
+    }
+
+    // If health check failed, return degraded status as success (not an error)
+    return success({
       status: 'Degraded',
       uptime: 'N/A'
-    };
+    });
   }
 }
 
