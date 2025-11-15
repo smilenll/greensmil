@@ -23,3 +23,22 @@ cfnUserPool.verificationMessageTemplate = {
 // Password reset email template (used for forgot password flow)
 cfnUserPool.emailVerificationMessage = generatePasswordResetTemplate();
 cfnUserPool.emailVerificationSubject = 'Reset Your Greensmil Password';
+
+// Configure CORS for S3 bucket
+const { cfnBucket } = backend.storage.resources.cfnResources;
+cfnBucket.corsConfiguration = {
+  corsRules: [
+    {
+      allowedHeaders: ['*'],
+      allowedMethods: ['GET', 'HEAD', 'PUT', 'POST', 'DELETE'],
+      allowedOrigins: ['*'],
+      exposedHeaders: [
+        'ETag',
+        'x-amz-server-side-encryption',
+        'x-amz-request-id',
+        'x-amz-id-2',
+      ],
+      maxAge: 3000,
+    },
+  ],
+};
