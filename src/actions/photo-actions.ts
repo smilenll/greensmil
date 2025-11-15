@@ -5,15 +5,15 @@ import { generateServerClientUsingCookies } from '@aws-amplify/adapter-nextjs/da
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { Schema } from '../../amplify/data/resource';
-import { requireRole, requireAuth } from '@/lib/auth-server';
+import { requireAuth } from '@/lib/auth-server';
 import { cookies } from 'next/headers';
 import outputs from '../../amplify_outputs.json';
 import { ActionResponse, success, error, unauthorized } from '@/types/action-response';
 import { withRole, withAuth } from '@/lib/action-helpers';
 
-// S3 configuration
-const BUCKET_NAME = process.env.BUCKET_NAME || '';
-const AWS_REGION = process.env.COGNITO_REGION || 'us-east-2';
+// S3 configuration - read from Amplify Gen2 outputs
+const BUCKET_NAME = outputs.storage.bucket_name;
+const AWS_REGION = outputs.storage.aws_region;
 
 // Initialize S3 client
 const s3Client = new S3Client({
