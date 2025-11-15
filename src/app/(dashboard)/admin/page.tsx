@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { UsersStatusCard, SessionsStatusCard, SystemStatusCard, DeploymentStatusCard } from '@/components/admin/status-cards';
+import { UsersStatusCard, SessionsStatusCard, SystemStatusCard, DeploymentStatusCard, VisitsStatusCard } from '@/components/admin/status-cards';
 import { Loader2 } from 'lucide-react';
 
 function CardSkeleton() {
@@ -42,6 +42,9 @@ export default function AdminPage() {
         </Suspense>
         <Suspense fallback={<CardSkeleton />}>
           <DeploymentStatusCard />
+        </Suspense>
+        <Suspense fallback={<CardSkeleton />}>
+          <VisitsStatusCard />
         </Suspense>
       </div>
 
