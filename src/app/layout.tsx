@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Press_Start_2P } from "next/font/google";
+import { Geist, Geist_Mono, Press_Start_2P, Outfit } from "next/font/google";
 import "./globals.css";
 import AmplifyClientConfig from "./amplify-client-config";
 import { MainNav, Footer } from '@/components/layout';
@@ -21,6 +21,11 @@ const geistMono = Geist_Mono({
 const pressStart2P = Press_Start_2P({
   weight: "400",
   variable: "--font-press-start",
+  subsets: ["latin"],
+});
+
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
 });
 
@@ -66,7 +71,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${pressStart2P.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${pressStart2P.variable} ${outfit.variable} antialiased`}
         suppressHydrationWarning={true}
       >
         <GlobalSplashScreen />

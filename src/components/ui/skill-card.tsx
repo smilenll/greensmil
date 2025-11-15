@@ -1,4 +1,7 @@
 import Image from "next/image";
+import { ReactNode } from "react";
+import { cn } from "@/lib/utils";
+import { statusCardVariants, type StatusVariant } from "@/components/admin/status-cards/StatusCard";
 import {
   Tooltip,
   TooltipContent,
@@ -13,18 +16,24 @@ interface Technology {
 }
 
 interface SkillCardProps {
-  icon: string;
+  icon: ReactNode;
   title: string;
   technologies: Technology[];
+  variant?: StatusVariant;
+  className?: string;
 }
 
-export function SkillCard({ icon, title, technologies }: SkillCardProps) {
+export function SkillCard({ icon, title, technologies, variant = 'default', className }: SkillCardProps) {
   return (
-    <div className="p-6 rounded-lg  border border-border shadow-md">
-      <div className="h-12 w-12 bg-gray-200 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-        <span className="text-primary-foreground text-xl">{icon}</span>
+    <div className={cn(statusCardVariants({ variant }), className)}>
+      <div className="flex items-center justify-center mb-4">
+        <div className="flex flex-col items-center gap-3">
+          {icon}
+          <div>
+            <h4 className="text-lg font-medium">{title}</h4>
+          </div>
+        </div>
       </div>
-      <h3 className="text-xl font-semibold mb-4 text-center">{title}</h3>
       <TooltipProvider>
         <div className="grid grid-cols-3 gap-4">
           {technologies.map((tech) => {

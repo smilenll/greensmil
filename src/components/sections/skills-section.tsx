@@ -1,5 +1,6 @@
 import { ContentSection } from './home/content-section';
 import { SkillCard } from '@/components/ui/skill-card';
+import { Code2, Cog, Wrench } from 'lucide-react';
 
 const frontendTechnologies = [
   { name: 'TypeScript', logo: '/technologies/typescript.svg', website: 'https://www.typescriptlang.org/' },
@@ -41,21 +42,24 @@ export function SkillsSection() {
     <ContentSection title="Skills" className="bg-muted/20">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 not-prose">
         <SkillCard
-          icon="💻"
+          icon={<Code2 className="h-7 w-7" />}
           title="Front-end"
           technologies={frontendTechnologies}
+          variant="default"
         />
 
         <SkillCard
-          icon="⚙️"
+          icon={<Cog className="h-7 w-7" />}
           title="Back-end"
           technologies={backendTechnologies}
+          variant="success"
         />
 
         <SkillCard
-          icon="🔧"
+          icon={<Wrench className="h-7 w-7" />}
           title="Tools"
           technologies={toolsTechnologies}
+          variant="secondary"
         />
       </div>
     </ContentSection>

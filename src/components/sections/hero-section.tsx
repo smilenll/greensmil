@@ -71,7 +71,7 @@ export function HeroSection({
 
           {/* Main Title */}
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight">
-            <span className="bg-linear-to-r from-white to-white/90 bg-clip-text text-transparent drop-shadow-lg">
+            <span className="bg-gradient-to-r from-white to-white/90 bg-clip-text text-transparent drop-shadow-lg">
               {title}
             </span>
           </h1>
