@@ -23,6 +23,10 @@ const nextConfig: NextConfig = {
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
     RESEND_TO_EMAIL: process.env.RESEND_TO_EMAIL,
+    // Deployment status card variables
+    AMPLIFY_APP_ID: process.env.AMPLIFY_APP_ID,
+    AMPLIFY_BRANCH_NAME: process.env.AMPLIFY_BRANCH_NAME,
+    BUCKET_NAME: process.env.BUCKET_NAME,
   },
   images: {
     remotePatterns: [

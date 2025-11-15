@@ -12,7 +12,7 @@ import { ActionResponse, success, error, unauthorized } from '@/types/action-res
 import { withRole, withAuth } from '@/lib/action-helpers';
 
 // S3 configuration
-const BUCKET_NAME = 'amplify-d22ytonhmq8rvo-ma-photogallerybucketb708eb-zyv7kknvywi7';
+const BUCKET_NAME = process.env.BUCKET_NAME || '';
 const AWS_REGION = process.env.COGNITO_REGION || 'us-east-2';
 
 // Initialize S3 client
