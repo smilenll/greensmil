@@ -608,8 +608,12 @@ export async function analyzePhotoWithAI(photoId: string): Promise<ActionRespons
 
       // Get function name from Amplify outputs
       const functionName = (outputs as any).custom?.photoAiAnalysisFunctionName ||
-                          process.env.PHOTO_AI_ANALYSIS_FUNCTION_NAME ||
-                          'photo-ai-analysis';
+                          process.env.PHOTO_AI_ANALYSIS_FUNCTION_NAME;
+
+      if (!functionName) {
+        console.error('[analyzePhotoWithAI] Lambda function not deployed. Run: npx ampx sandbox');
+        return error('AI analysis service not available. Please contact administrator.');
+      }
 
       console.log('[analyzePhotoWithAI] Using function name:', functionName);
 
