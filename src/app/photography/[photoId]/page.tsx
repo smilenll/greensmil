@@ -1,11 +1,14 @@
 import { notFound } from 'next/navigation';
-import { getPhotoById } from '@/actions/photo-actions';
+import { getPhotoById, getPhotoAIAnalysis } from '@/actions/photo-actions';
 import { PictureFrame } from '@/components/photography/picture-frame';
 import { PhotoDetailActions } from '@/components/photography/photo-detail-actions';
+import { PhotoAIReport } from '@/components/photography/photo-ai-report';
+import { PhotoAIAnalysisButton } from '@/components/photography/photo-ai-analysis-button';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { requireAuth } from '@/lib/auth-server';
 
 interface PhotoPageProps {
   params: Promise<{
@@ -49,6 +52,19 @@ export default async function PhotoPage({ params }: PhotoPageProps) {
 
   const photo = response.data;
 
+  // Check if user is admin
+  let isAdmin = false;
+  try {
+    const user = await requireAuth();
+    isAdmin = user.groups?.includes('admin') || false;
+  } catch {
+    // Not admin or not authenticated
+  }
+
+  // Get AI analysis if available
+  const aiAnalysisResponse = await getPhotoAIAnalysis(photoId);
+  const aiAnalysis = aiAnalysisResponse.status === 'success' ? aiAnalysisResponse.data : null;
+
   return (
     <div className="min-h-screen pt-28 pb-16 px-4 lg:px-6">
       <div className="container mx-auto max-w-6xl">
@@ -81,15 +97,28 @@ export default async function PhotoPage({ params }: PhotoPageProps) {
               </p>
             )}
 
-            <div className="flex items-center pt-2 border-t">
+            <div className="flex items-center justify-between pt-2 border-t">
               <PhotoDetailActions
                 photoId={photo.id}
                 initialLikeCount={photo.likeCount}
                 initialIsLiked={photo.isLikedByCurrentUser || false}
                 isAuthenticated={true}
               />
+              {isAdmin && (
+                <PhotoAIAnalysisButton
+                  photoId={photo.id}
+                  isAnalyzed={photo.aiAnalyzed}
+                />
+              )}
             </div>
           </div>
+
+          {/* AI Analysis Report */}
+          {aiAnalysis && (
+            <div className="mt-8 w-full max-w-4xl">
+              <PhotoAIReport analysis={aiAnalysis} />
+            </div>
+          )}
         </div>
       </div>
     </div>

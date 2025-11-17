@@ -14,16 +14,19 @@ const nextConfig: NextConfig = {
   },
 
   // Explicitly expose environment variables for AWS Amplify
+  // Note: AWS_ prefixed vars are reserved by Amplify and auto-provided
   env: {
+    // AWS Cognito credentials for admin operations
     COGNITO_ACCESS_KEY_ID: process.env.COGNITO_ACCESS_KEY_ID,
     COGNITO_SECRET_ACCESS_KEY: process.env.COGNITO_SECRET_ACCESS_KEY,
     COGNITO_REGION: process.env.COGNITO_REGION,
+    // Email & reCAPTCHA
     RECAPTCHA_SECRET_KEY: process.env.RECAPTCHA_SECRET_KEY,
     NEXT_PUBLIC_RECAPTCHA_SITE_KEY: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
     RESEND_TO_EMAIL: process.env.RESEND_TO_EMAIL,
-    // Deployment status card variables
+    // Deployment status card (AMPLIFY_APP_ID must be set manually)
     AMPLIFY_APP_ID: process.env.AMPLIFY_APP_ID,
     AMPLIFY_BRANCH_NAME: process.env.AMPLIFY_BRANCH_NAME,
   },

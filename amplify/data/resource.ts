@@ -10,6 +10,26 @@ const schema = a.schema({
       uploadedBy: a.string().required(), // User ID who uploaded
       likes: a.hasMany('PhotoLike', 'photoId'),
       likeCount: a.integer().default(0),
+      // AI Analysis fields
+      aiAnalyzed: a.boolean().default(false), // Whether AI analysis has been performed
+      // Composition
+      aiCompositionScore: a.integer(), // Score 1-5
+      aiCompositionRationale: a.string(), // Explanation for composition score
+      // Lighting and Exposure
+      aiLightingScore: a.integer(), // Score 1-5
+      aiLightingRationale: a.string(), // Explanation for lighting score
+      // Subject and Storytelling
+      aiSubjectScore: a.integer(), // Score 1-5
+      aiSubjectRationale: a.string(), // Explanation for subject/storytelling score
+      // Technical Quality
+      aiTechnicalScore: a.integer(), // Score 1-5
+      aiTechnicalRationale: a.string(), // Explanation for technical quality score
+      // Creativity and Originality
+      aiCreativityScore: a.integer(), // Score 1-5
+      aiCreativityRationale: a.string(), // Explanation for creativity score
+      // Overall
+      aiOverallScore: a.float(), // Average of all scores
+      aiAnalyzedAt: a.datetime(), // When analysis was performed
       createdAt: a.datetime(),
       updatedAt: a.datetime(),
     })

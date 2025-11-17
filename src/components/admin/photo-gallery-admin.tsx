@@ -7,11 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Trash2, Edit, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Trash2, Edit, MoreHorizontal, Sparkles } from "lucide-react";
 import { PhotoCard } from "@/components/photography/photo-card";
 import { toast } from "sonner";
 import { PhotoLikeButton } from "../photography/photo-like-button";
+import { PhotoAIAnalysisButton } from "../photography/photo-ai-analysis-button";
 
 interface PhotoGalleryAdminProps {
   photos: Photo[];
@@ -158,7 +159,19 @@ export function PhotoGalleryAdmin({ photos }: PhotoGalleryAdminProps) {
                       <Edit className="h-4 w-4 mr-2" />
                       Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem asChild>
+                      <div>
+                        <PhotoAIAnalysisButton
+                          photoId={photo.id}
+                          isAnalyzed={photo.aiAnalyzed}
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start font-normal h-8 px-2"
+                        />
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
                       onClick={() => handleDelete(photo.id)}
                       disabled={deletingId === photo.id}
                       className="text-destructive focus:text-destructive"

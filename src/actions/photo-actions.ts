@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { generateServerClientUsingCookies } from '@aws-amplify/adapter-nextjs/data';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import type { Schema } from '../../amplify/data/resource';
 import { requireAuth } from '@/lib/auth-server';
 import { cookies } from 'next/headers';
@@ -19,6 +20,17 @@ const AWS_REGION = outputs.storage.aws_region;
 const s3Client = new S3Client({
   region: AWS_REGION,
   // Use environment credentials if available (production), otherwise use default provider (development)
+  ...(process.env.COGNITO_ACCESS_KEY_ID ? {
+    credentials: {
+      accessKeyId: process.env.COGNITO_ACCESS_KEY_ID,
+      secretAccessKey: process.env.COGNITO_SECRET_ACCESS_KEY || '',
+    },
+  } : {}),
+});
+
+// Initialize Lambda client
+const lambdaClient = new LambdaClient({
+  region: AWS_REGION,
   ...(process.env.COGNITO_ACCESS_KEY_ID ? {
     credentials: {
       accessKeyId: process.env.COGNITO_ACCESS_KEY_ID,
@@ -45,6 +57,20 @@ export type Photo = {
   likeCount: number;
   isLikedByCurrentUser?: boolean;
   createdAt: string;
+  // AI Analysis fields
+  aiAnalyzed?: boolean;
+  aiCompositionScore?: number;
+  aiCompositionRationale?: string;
+  aiLightingScore?: number;
+  aiLightingRationale?: string;
+  aiSubjectScore?: number;
+  aiSubjectRationale?: string;
+  aiTechnicalScore?: number;
+  aiTechnicalRationale?: string;
+  aiCreativityScore?: number;
+  aiCreativityRationale?: string;
+  aiOverallScore?: number;
+  aiAnalyzedAt?: string;
 };
 
 export type PhotosData = {
@@ -231,6 +257,20 @@ export async function getAllPhotos(): Promise<ActionResponse<PhotosData>> {
           likeCount: actualLikeCount,
           isLikedByCurrentUser: likeInfo.userLiked,
           createdAt: photo.createdAt!,
+          // AI Analysis fields
+          aiAnalyzed: photo.aiAnalyzed || false,
+          aiCompositionScore: photo.aiCompositionScore || undefined,
+          aiCompositionRationale: photo.aiCompositionRationale || undefined,
+          aiLightingScore: photo.aiLightingScore || undefined,
+          aiLightingRationale: photo.aiLightingRationale || undefined,
+          aiSubjectScore: photo.aiSubjectScore || undefined,
+          aiSubjectRationale: photo.aiSubjectRationale || undefined,
+          aiTechnicalScore: photo.aiTechnicalScore || undefined,
+          aiTechnicalRationale: photo.aiTechnicalRationale || undefined,
+          aiCreativityScore: photo.aiCreativityScore || undefined,
+          aiCreativityRationale: photo.aiCreativityRationale || undefined,
+          aiOverallScore: photo.aiOverallScore || undefined,
+          aiAnalyzedAt: photo.aiAnalyzedAt || undefined,
         };
       })
     );
@@ -402,6 +442,20 @@ export async function getPhotoById(photoId: string): Promise<ActionResponse<Phot
       likeCount: actualLikeCount,
       isLikedByCurrentUser: isLiked,
       createdAt: photo.createdAt!,
+      // AI Analysis fields
+      aiAnalyzed: photo.aiAnalyzed || false,
+      aiCompositionScore: photo.aiCompositionScore || undefined,
+      aiCompositionRationale: photo.aiCompositionRationale || undefined,
+      aiLightingScore: photo.aiLightingScore || undefined,
+      aiLightingRationale: photo.aiLightingRationale || undefined,
+      aiSubjectScore: photo.aiSubjectScore || undefined,
+      aiSubjectRationale: photo.aiSubjectRationale || undefined,
+      aiTechnicalScore: photo.aiTechnicalScore || undefined,
+      aiTechnicalRationale: photo.aiTechnicalRationale || undefined,
+      aiCreativityScore: photo.aiCreativityScore || undefined,
+      aiCreativityRationale: photo.aiCreativityRationale || undefined,
+      aiOverallScore: photo.aiOverallScore || undefined,
+      aiAnalyzedAt: photo.aiAnalyzedAt || undefined,
     });
   });
 }
@@ -501,5 +555,158 @@ export async function deletePhoto(photoId: string): Promise<ActionResponse<void>
     revalidatePath('/admin/photos');
 
     return success(undefined);
+  });
+}
+
+/**
+ * AI Analysis types
+ */
+export type PhotoAIAnalysis = {
+  composition: {
+    score: number;
+    rationale: string;
+  };
+  lighting: {
+    score: number;
+    rationale: string;
+  };
+  subject: {
+    score: number;
+    rationale: string;
+  };
+  technical: {
+    score: number;
+    rationale: string;
+  };
+  creativity: {
+    score: number;
+    rationale: string;
+  };
+  overall: number;
+};
+
+/**
+ * Analyze a photo using AI (Admin only)
+ * Uses AWS Lambda + Bedrock (Claude) for cost-effective image analysis
+ */
+export async function analyzePhotoWithAI(photoId: string): Promise<ActionResponse<PhotoAIAnalysis>> {
+  return withRole('admin', async () => {
+    try {
+      // Get photo details
+      const { data: photo } = await cookieBasedClient.models.Photo.get({ id: photoId });
+      if (!photo) {
+        return error('Photo not found');
+      }
+
+      console.log('[analyzePhotoWithAI] Starting analysis for:', photo.imageKey);
+
+      // Invoke Lambda function
+      const payload = {
+        imageKey: photo.imageKey,
+        bucketName: BUCKET_NAME,
+      };
+
+      // Get function name from Amplify outputs
+      const functionName = (outputs as any).custom?.photoAiAnalysisFunctionName ||
+                          process.env.PHOTO_AI_ANALYSIS_FUNCTION_NAME ||
+                          'photo-ai-analysis';
+
+      console.log('[analyzePhotoWithAI] Using function name:', functionName);
+
+      const command = new InvokeCommand({
+        FunctionName: functionName,
+        Payload: JSON.stringify(payload),
+      });
+
+      const lambdaResponse = await lambdaClient.send(command);
+      const responsePayload = JSON.parse(new TextDecoder().decode(lambdaResponse.Payload));
+
+      console.log('[analyzePhotoWithAI] Lambda response:', responsePayload);
+
+      if (responsePayload.statusCode !== 200) {
+        const errorBody = JSON.parse(responsePayload.body);
+        console.error('[analyzePhotoWithAI] Lambda error:', errorBody);
+        return error(errorBody.error || 'Failed to analyze photo');
+      }
+
+      const result = JSON.parse(responsePayload.body);
+      const analysis: PhotoAIAnalysis = result.analysis;
+
+      // Update photo with AI analysis results
+      const { data: updatedPhoto } = await cookieBasedClient.models.Photo.update({
+        id: photoId,
+        aiAnalyzed: true,
+        aiCompositionScore: analysis.composition.score,
+        aiCompositionRationale: analysis.composition.rationale,
+        aiLightingScore: analysis.lighting.score,
+        aiLightingRationale: analysis.lighting.rationale,
+        aiSubjectScore: analysis.subject.score,
+        aiSubjectRationale: analysis.subject.rationale,
+        aiTechnicalScore: analysis.technical.score,
+        aiTechnicalRationale: analysis.technical.rationale,
+        aiCreativityScore: analysis.creativity.score,
+        aiCreativityRationale: analysis.creativity.rationale,
+        aiOverallScore: analysis.overall,
+        aiAnalyzedAt: new Date().toISOString(),
+      });
+
+      if (!updatedPhoto) {
+        return error('Failed to save analysis results');
+      }
+
+      console.log('[analyzePhotoWithAI] Analysis saved successfully');
+
+      revalidatePath('/photography');
+      revalidatePath(`/photography/${photoId}`);
+      revalidatePath('/admin/photos');
+
+      return success(analysis);
+    } catch (err) {
+      console.error('[analyzePhotoWithAI] Error:', err);
+      return error(err instanceof Error ? err.message : 'Failed to analyze photo');
+    }
+  });
+}
+
+/**
+ * Get AI analysis for a photo
+ */
+export async function getPhotoAIAnalysis(photoId: string): Promise<ActionResponse<PhotoAIAnalysis | null>> {
+  return withAuth(async () => {
+    const { data: photo } = await cookieBasedClient.models.Photo.get({ id: photoId });
+
+    if (!photo) {
+      return error('Photo not found');
+    }
+
+    if (!photo.aiAnalyzed || !photo.aiOverallScore) {
+      return success(null);
+    }
+
+    const analysis: PhotoAIAnalysis = {
+      composition: {
+        score: photo.aiCompositionScore || 0,
+        rationale: photo.aiCompositionRationale || '',
+      },
+      lighting: {
+        score: photo.aiLightingScore || 0,
+        rationale: photo.aiLightingRationale || '',
+      },
+      subject: {
+        score: photo.aiSubjectScore || 0,
+        rationale: photo.aiSubjectRationale || '',
+      },
+      technical: {
+        score: photo.aiTechnicalScore || 0,
+        rationale: photo.aiTechnicalRationale || '',
+      },
+      creativity: {
+        score: photo.aiCreativityScore || 0,
+        rationale: photo.aiCreativityRationale || '',
+      },
+      overall: photo.aiOverallScore,
+    };
+
+    return success(analysis);
   });
 }
