@@ -66,12 +66,6 @@ backend.photoAiAnalysis.resources.lambda.addToRolePolicy(
   })
 );
 
-// Add function name as environment variable for Next.js app
-backend.photoAiAnalysis.resources.lambda.addEnvironment(
-  'AWS_REGION_OVERRIDE',
-  'us-east-2'
-);
-
 // Export function name for Next.js to use
 backend.addOutput({
   custom: {

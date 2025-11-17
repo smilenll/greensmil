@@ -6,6 +6,6 @@ export const photoAiAnalysis = defineFunction({
   timeoutSeconds: 60, // Image analysis may take some time
   memoryMB: 512,
   environment: {
-    // Add any environment variables if needed
+    AWS_REGION_OVERRIDE: 'us-east-2', // Override region for Bedrock access
   },
 });
