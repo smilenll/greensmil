@@ -48,8 +48,9 @@ export async function DeploymentStatusCard() {
     deployment.status === 'PROVISIONING' ? 'Provisioning' :
     deployment.status === 'PENDING' ? 'Pending' : 'Unavailable';
 
-  // Transform deployment data to subtitle
-  const subtitle = deployment.commitMessage ||
+  // Transform deployment data to subtitle - show only first line of commit message
+  const commitSummary = deployment.commitMessage?.split('\n')[0] || undefined;
+  const subtitle = commitSummary ||
     (deployment.endTime ? `Last: ${new Date(deployment.endTime).toLocaleDateString()} ${new Date(deployment.endTime).toLocaleTimeString()}` : undefined) ||
     (deployment.branchName ? `Branch: ${deployment.branchName}` : 'Deployment status');
 
