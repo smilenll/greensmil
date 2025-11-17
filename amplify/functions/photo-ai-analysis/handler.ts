@@ -124,10 +124,9 @@ Respond in this exact JSON format:
       ],
     };
 
-    // Use cross-region inference profile for Claude 3 Haiku
-    // This enables on-demand access across multiple regions
+    // Use standard Claude 3 Haiku model ID
     const command = new InvokeModelCommand({
-      modelId: 'us.anthropic.claude-3-haiku-20240307-v1:0',
+      modelId: 'anthropic.claude-3-haiku-20240307-v1:0',
       contentType: 'application/json',
       accept: 'application/json',
       body: JSON.stringify(payload),
