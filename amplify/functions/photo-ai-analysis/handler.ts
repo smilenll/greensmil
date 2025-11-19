@@ -1,17 +1,11 @@
-// @ts-nocheck - Dependencies are installed during Lambda deployment
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
-import Jimp from 'jimp';
 
 // Use region from environment or default to us-east-2
 const AWS_REGION = process.env.AWS_REGION_OVERRIDE || process.env.AWS_REGION || 'us-east-2';
 
 const s3Client = new S3Client({ region: AWS_REGION });
 const bedrockClient = new BedrockRuntimeClient({ region: AWS_REGION });
-
-// Claude's maximum image size (5 MB in base64)
-// Base64 encoding increases size by ~33%, so we need raw bytes to be < 3.75 MB
-const MAX_IMAGE_BYTES = 3.75 * 1024 * 1024;
 
 interface PhotoAnalysisResult {
   composition: {
@@ -64,52 +58,8 @@ export const handler = async (event: any) => {
       };
     }
 
-    // Resize image if it exceeds Claude's size limit
-    let processedImageBytes: Uint8Array = imageBytes;
-
-    if (imageBytes.length > MAX_IMAGE_BYTES) {
-      console.log(`Image too large: ${(imageBytes.length / 1024 / 1024).toFixed(2)}MB, resizing...`);
-
-      try {
-        // Load image with Jimp (pure JavaScript, works in Lambda)
-        const image = await Jimp.read(Buffer.from(imageBytes));
-        const { width, height } = image.bitmap;
-
-        // Calculate scale factor to fit within size limit
-        // Start with 80% of original size and iterate if needed
-        let quality = 85;
-        let scale = 0.8;
-        let resized: Buffer;
-
-        do {
-          const newWidth = Math.round(width * scale);
-          const newHeight = Math.round(height * scale);
-
-          resized = await image
-            .clone()
-            .resize(newWidth, newHeight)
-            .quality(quality)
-            .getBufferAsync(Jimp.MIME_JPEG);
-
-          console.log(
-            `Tried ${newWidth}x${newHeight} at quality ${quality}: ${(resized.length / 1024 / 1024).toFixed(2)}MB`
-          );
-
-          // If still too large, reduce scale and quality
-          if (resized.length > MAX_IMAGE_BYTES) {
-            scale *= 0.9;
-            quality = Math.max(60, quality - 5);
-          }
-        } while (resized.length > MAX_IMAGE_BYTES && scale > 0.3);
-
-        processedImageBytes = new Uint8Array(resized);
-        console.log(`Final resized image: ${(processedImageBytes.length / 1024 / 1024).toFixed(2)}MB`);
-      } catch (resizeError) {
-        console.error('Image resize error:', resizeError);
-        // If resize fails, try original (may fail Bedrock if too large)
-        console.warn('Falling back to original image');
-      }
-    }
+    // Images are pre-compressed on client side to < 3MB
+    // No server-side resizing needed
 
     // Prepare prompt for Claude
     const prompt = `You are a professional photography critic and judge. Analyze this photograph based on these five essential principles of photography:
@@ -165,7 +115,7 @@ Respond in this exact JSON format:
               source: {
                 type: 'base64',
                 media_type: 'image/jpeg',
-                data: Buffer.from(processedImageBytes).toString('base64'),
+                data: Buffer.from(imageBytes).toString('base64'),
               },
             },
             {

@@ -4,10 +4,11 @@ import imageCompression from 'browser-image-compression';
  * Client-side image optimization configuration
  * - Resize to max 10 megapixels
  * - High quality compression
+ * - Compress to < 3MB for AI analysis compatibility (Claude's 5MB base64 limit)
  * - Preserve EXIF data (GPS, camera info)
  */
 const MAX_MEGAPIXELS = 10; // 10 million pixels
-const QUALITY = 0.9; // 90% quality
+const QUALITY = 0.85; // 85% quality (balanced for size)
 
 export interface OptimizedImageResult {
   file: File;
@@ -46,7 +47,7 @@ export async function optimizeImageClient(
     const maxDimension = calculateMaxDimension(MAX_MEGAPIXELS);
 
     const options = {
-      maxSizeMB: 10, // Max file size in MB (safety limit)
+      maxSizeMB: 3, // Max 3MB for AI analysis (Claude's 5MB base64 limit)
       maxWidthOrHeight: maxDimension, // Max dimension to achieve ~10MP
       quality: QUALITY,
       useWebWorker: true, // Use web worker for better performance
