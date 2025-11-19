@@ -45,14 +45,14 @@ export function SkillsSection() {
           icon={<Code2 className="h-7 w-7" />}
           title="Front-end"
           technologies={frontendTechnologies}
-          variant="default"
+          variant="secondary"
         />
 
         <SkillCard
           icon={<Cog className="h-7 w-7" />}
           title="Back-end"
           technologies={backendTechnologies}
-          variant="success"
+          variant="secondary"
         />
 
         <SkillCard

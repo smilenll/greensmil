@@ -1,5 +1,6 @@
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
+import sharp from 'sharp';
 
 // Use region from environment or default to us-east-2
 const AWS_REGION = process.env.AWS_REGION_OVERRIDE || process.env.AWS_REGION || 'us-east-2';
@@ -58,6 +59,37 @@ export const handler = async (event: any) => {
       };
     }
 
+    // Resize image to keep under 3.5MB for Bedrock
+    let processedImageBytes = imageBytes;
+    const maxSizeBytes = 3.5 * 1024 * 1024; // 3.5MB
+    
+    if (imageBytes.length > maxSizeBytes) {
+      console.log(`Image too large (${(imageBytes.length / 1024 / 1024).toFixed(2)}MB), resizing...`);
+      
+      // Start with reasonable dimensions and adjust quality
+      let quality = 85;
+      let width = 1920;
+      
+      do {
+        processedImageBytes = await sharp(imageBytes)
+          .resize(width, width, { fit: 'inside', withoutEnlargement: true })
+          .jpeg({ quality })
+          .toBuffer();
+        
+        // If still too large, reduce quality or size
+        if (processedImageBytes.length > maxSizeBytes) {
+          if (quality > 60) {
+            quality -= 10;
+          } else {
+            width = Math.floor(width * 0.8);
+            quality = 85;
+          }
+        }
+      } while (processedImageBytes.length > maxSizeBytes && width > 512);
+      
+      console.log(`Resized to ${(processedImageBytes.length / 1024 / 1024).toFixed(2)}MB`);
+    }
+
     // Prepare prompt for Claude
     const prompt = `You are a professional photography critic and judge. Analyze this photograph based on these five essential principles of photography:
 
@@ -112,7 +144,7 @@ Respond in this exact JSON format:
               source: {
                 type: 'base64',
                 media_type: 'image/jpeg',
-                data: Buffer.from(imageBytes).toString('base64'),
+                data: Buffer.from(processedImageBytes).toString('base64'),
               },
             },
             {

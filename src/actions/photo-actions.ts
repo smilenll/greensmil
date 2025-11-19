@@ -629,9 +629,19 @@ export async function analyzePhotoWithAI(photoId: string): Promise<ActionRespons
       console.log('[analyzePhotoWithAI] Lambda response:', responsePayload);
 
       if (responsePayload.statusCode !== 200) {
-        const errorBody = JSON.parse(responsePayload.body);
-        console.error('[analyzePhotoWithAI] Lambda error:', errorBody);
-        return error(errorBody.error || 'Failed to analyze photo');
+        let errorMessage = 'Failed to analyze photo';
+        if (responsePayload.body) {
+          try {
+            const errorBody = JSON.parse(responsePayload.body);
+            errorMessage = errorBody.error || errorMessage;
+            console.error('[analyzePhotoWithAI] Lambda error:', errorBody);
+          } catch (parseError) {
+            console.error('[analyzePhotoWithAI] Failed to parse error body:', responsePayload.body);
+          }
+        } else {
+          console.error('[analyzePhotoWithAI] Lambda error - no response body:', responsePayload);
+        }
+        return error(errorMessage);
       }
 
       const result = JSON.parse(responsePayload.body);
