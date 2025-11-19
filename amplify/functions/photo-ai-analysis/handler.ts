@@ -1,3 +1,4 @@
+// @ts-nocheck - Dependencies are installed during Lambda deployment
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 import Jimp from 'jimp';
