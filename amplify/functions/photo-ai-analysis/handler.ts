@@ -66,28 +66,40 @@ export const handler = async (event: any) => {
     if (imageBytes.length > maxSizeBytes) {
       console.log(`Image too large (${(imageBytes.length / 1024 / 1024).toFixed(2)}MB), resizing...`);
       
-      // Start with reasonable dimensions and adjust quality
-      let quality = 85;
-      let width = 1920;
-      
-      do {
-        processedImageBytes = await sharp(imageBytes)
-          .resize(width, width, { fit: 'inside', withoutEnlargement: true })
-          .jpeg({ quality })
-          .toBuffer();
+      try {
+        // Initialize Sharp with error handling
+        // Sharp will be automatically installed with Linux binaries during Lambda deployment
+        const sharpInstance = sharp(Buffer.from(imageBytes));
         
-        // If still too large, reduce quality or size
-        if (processedImageBytes.length > maxSizeBytes) {
-          if (quality > 60) {
-            quality -= 10;
-          } else {
-            width = Math.floor(width * 0.8);
-            quality = 85;
+        // Start with reasonable dimensions and adjust quality
+        let quality = 85;
+        let width = 1920;
+        
+        do {
+          processedImageBytes = await sharpInstance
+            .clone()
+            .resize(width, width, { fit: 'inside', withoutEnlargement: true })
+            .jpeg({ quality })
+            .toBuffer();
+          
+          // If still too large, reduce quality or size
+          if (processedImageBytes.length > maxSizeBytes) {
+            if (quality > 60) {
+              quality -= 10;
+            } else {
+              width = Math.floor(width * 0.8);
+              quality = 85;
+            }
           }
-        }
-      } while (processedImageBytes.length > maxSizeBytes && width > 512);
-      
-      console.log(`Resized to ${(processedImageBytes.length / 1024 / 1024).toFixed(2)}MB`);
+        } while (processedImageBytes.length > maxSizeBytes && width > 512);
+        
+        console.log(`Resized to ${(processedImageBytes.length / 1024 / 1024).toFixed(2)}MB`);
+      } catch (sharpError) {
+        console.error('Sharp processing error:', sharpError);
+        // If Sharp fails, try to use original image (may fail Bedrock if too large)
+        console.warn('Falling back to original image (may exceed Bedrock size limit)');
+        processedImageBytes = imageBytes;
+      }
     }
 
     // Prepare prompt for Claude

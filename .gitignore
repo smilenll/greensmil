@@ -39,3 +39,7 @@ next-env.d.ts
 .amplify
 amplify_outputs*
 amplifyconfiguration*
+
+# Lambda function dependencies (installed during deployment)
+amplify/functions/*/node_modules/
+amplify/functions/*/package-lock.json

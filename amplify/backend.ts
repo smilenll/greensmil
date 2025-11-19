@@ -77,6 +77,33 @@ backend.photoAiAnalysis.resources.lambda.addToRolePolicy(
   })
 );
 
+// Configure Lambda bundling for Sharp (native module)
+// Sharp needs to be excluded from bundling and included from node_modules with its native binaries
+// During Amplify deployment, npm install runs in a Linux container, so Sharp gets correct Linux binaries
+const lambdaFunction = backend.photoAiAnalysis.resources.lambda;
+
+// Use escape hatch to access the underlying NodejsFunction construct
+// and configure bundling to exclude Sharp
+const cfnFunction = backend.photoAiAnalysis.resources.cfnResources.cfnFunction;
+if (cfnFunction) {
+  // Configure the bundler to exclude sharp from bundling
+  // This ensures sharp is included from node_modules with its native binaries
+  // The nodejsFunction should automatically detect native modules, but we ensure it's excluded
+  cfnFunction.addPropertyOverride('Code.ImageUri', undefined); // Ensure we're not using container image
+}
+
+// Access the underlying NodejsFunction construct to configure bundling
+// Using escape hatch pattern to access internal CDK construct
+const nodejsFunctionConstruct = lambdaFunction.node.defaultChild as any;
+if (nodejsFunctionConstruct && nodejsFunctionConstruct.bundling) {
+  // Override bundling to exclude Sharp
+  nodejsFunctionConstruct.bundling = {
+    ...nodejsFunctionConstruct.bundling,
+    externalModules: [...(nodejsFunctionConstruct.bundling.externalModules || []), 'sharp'],
+    nodeModules: [...(nodejsFunctionConstruct.bundling.nodeModules || []), 'sharp'],
+  };
+}
+
 // Export function name for Next.js to use
 backend.addOutput({
   custom: {

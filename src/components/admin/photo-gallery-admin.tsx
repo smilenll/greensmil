@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Trash2, Edit, MoreHorizontal, Sparkles } from "lucide-react";
+import { Trash2, Edit, MoreHorizontal, Loader2 } from "lucide-react";
 import { PhotoCard } from "@/components/photography/photo-card";
 import { toast } from "sonner";
 import { PhotoLikeButton } from "../photography/photo-like-button";
@@ -132,7 +132,7 @@ export function PhotoGalleryAdmin({ photos }: PhotoGalleryAdminProps) {
             onImageLoad={handleImageLoad}
             onImageError={handleImageError}
             actions={
-              <div className={"flex w-full justify-between"}>
+              <div className={"flex w-full justify-between items-center gap-2"}>
                 <PhotoLikeButton
                   photoId={photo.id}
                   likeCount={photo.likeCount}
@@ -148,39 +148,69 @@ export function PhotoGalleryAdmin({ photos }: PhotoGalleryAdminProps) {
                   className="gap-1"
                 />
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="flex-shrink-0">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEdit(photo.id)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <div>
-                        <PhotoAIAnalysisButton
-                          photoId={photo.id}
-                          isAnalyzed={photo.aiAnalyzed}
-                          variant="ghost"
-                          size="sm"
-                          className="w-full justify-start font-normal h-8 px-2"
-                        />
-                      </div>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => handleDelete(photo.id)}
-                      disabled={deletingId === photo.id}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      {deletingId === photo.id ? "Deleting..." : "Delete"}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex items-center gap-2">
+                  {/* Edit button - next to delete */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleEdit(photo.id);
+                    }}
+                    className="flex-shrink-0"
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+
+                  {/* Delete button */}
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDelete(photo.id);
+                    }}
+                    disabled={deletingId === photo.id}
+                    className="flex-shrink-0"
+                  >
+                    {deletingId === photo.id ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </>
+                    )}
+                  </Button>
+
+                  {/* More options dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="flex-shrink-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <div>
+                          <PhotoAIAnalysisButton
+                            photoId={photo.id}
+                            isAnalyzed={photo.aiAnalyzed}
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start font-normal h-8 px-2"
+                          />
+                        </div>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             }
           />
