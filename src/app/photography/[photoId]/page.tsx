@@ -104,12 +104,11 @@ export default async function PhotoPage({ params }: PhotoPageProps) {
                 initialIsLiked={photo.isLikedByCurrentUser || false}
                 isAuthenticated={true}
               />
-              {isAdmin && (
-                <PhotoAIAnalysisButton
+               <PhotoAIAnalysisButton
                   photoId={photo.id}
                   isAnalyzed={photo.aiAnalyzed}
+                  isAdmin={isAdmin}
                 />
-              )}
             </div>
           </div>
 

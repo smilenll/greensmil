@@ -102,7 +102,7 @@ Respond in this exact JSON format:
     // Call Bedrock with Claude Haiku (cheapest model)
     const payload = {
       anthropic_version: 'bedrock-2023-05-31',
-      max_tokens: 1024,
+      max_tokens: 3000, // Increased to ensure Claude can complete the JSON even for detailed responses
       messages: [
         {
           role: 'user',
@@ -124,9 +124,10 @@ Respond in this exact JSON format:
       ],
     };
 
-    // Use standard Claude 3 Haiku model ID
+    // Use cross-region inference profile for on-demand access
+    // This is required for on-demand throughput in Bedrock
     const command = new InvokeModelCommand({
-      modelId: 'anthropic.claude-3-haiku-20240307-v1:0',
+      modelId: 'us.anthropic.claude-3-haiku-20240307-v1:0',
       contentType: 'application/json',
       accept: 'application/json',
       body: JSON.stringify(payload),
@@ -142,16 +143,95 @@ Respond in this exact JSON format:
       throw new Error('No text response from Claude');
     }
 
+    console.log('Raw Claude response:', textContent);
+
     // Parse the JSON response from Claude
     // Claude might wrap the JSON in markdown code blocks, so let's clean it
     let jsonText = textContent.trim();
-    if (jsonText.startsWith('```json')) {
-      jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
-    } else if (jsonText.startsWith('```')) {
-      jsonText = jsonText.replace(/```\n?/g, '');
+
+    // Remove markdown code blocks
+    jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+    // Extract JSON object by finding matching braces
+    const firstBrace = jsonText.indexOf('{');
+    if (firstBrace !== -1) {
+      let braceCount = 0;
+      let inString = false;
+      let escapeNext = false;
+
+      for (let i = firstBrace; i < jsonText.length; i++) {
+        const char = jsonText[i];
+
+        if (escapeNext) {
+          escapeNext = false;
+          continue;
+        }
+
+        if (char === '\\') {
+          escapeNext = true;
+          continue;
+        }
+
+        if (char === '"') {
+          inString = !inString;
+          continue;
+        }
+
+        if (!inString) {
+          if (char === '{') braceCount++;
+          if (char === '}') {
+            braceCount--;
+            if (braceCount === 0) {
+              jsonText = jsonText.substring(firstBrace, i + 1);
+              break;
+            }
+          }
+        }
+      }
     }
 
-    const analysis: PhotoAnalysisResult = JSON.parse(jsonText);
+    console.log('Cleaned JSON text:', jsonText);
+
+    let analysis: PhotoAnalysisResult;
+    try {
+      analysis = JSON.parse(jsonText);
+    } catch (parseError) {
+      console.error('Failed to parse Claude response.');
+      console.error('Raw response:', textContent);
+      console.error('Cleaned JSON:', jsonText);
+      console.error('Parse error:', parseError);
+
+      // Try to fix incomplete JSON by adding missing closing braces
+      console.log('Attempting to fix incomplete JSON...');
+      let fixedJson = jsonText.trim();
+
+      // Count open and close braces
+      let openBraces = (fixedJson.match(/\{/g) || []).length;
+      let closeBraces = (fixedJson.match(/\}/g) || []).length;
+
+      // Add missing closing braces
+      if (openBraces > closeBraces) {
+        const missing = openBraces - closeBraces;
+        console.log(`Adding ${missing} missing closing brace(s)`);
+        fixedJson += '\n}'.repeat(missing);
+      }
+
+      // Try parsing again
+      try {
+        analysis = JSON.parse(fixedJson);
+        console.log('Successfully fixed and parsed incomplete JSON');
+      } catch (retryError) {
+        // If still fails, return error
+        const errorPos = parseError instanceof SyntaxError && parseError.message.match(/position (\d+)/)
+          ? parseInt(parseError.message.match(/position (\d+)/)![1])
+          : 0;
+        const contextStart = Math.max(0, errorPos - 100);
+        const contextEnd = Math.min(jsonText.length, errorPos + 100);
+        const problemArea = jsonText.substring(contextStart, contextEnd);
+
+        throw new Error(`Invalid JSON from Claude at position ${errorPos}. Context: ...${problemArea}...`);
+      }
+    }
 
     // Calculate overall score (average of all scores)
     const overall =

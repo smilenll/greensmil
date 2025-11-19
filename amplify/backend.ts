@@ -55,17 +55,25 @@ backend.photoAiAnalysis.resources.lambda.addToRolePolicy(
 );
 
 // Grant photo AI analysis function access to Bedrock (Claude)
-// Use cross-region inference profile for on-demand access
+// Use wildcard permissions to allow all regions and inference profiles
 backend.photoAiAnalysis.resources.lambda.addToRolePolicy(
   new PolicyStatement({
     actions: ['bedrock:InvokeModel'],
     resources: [
-      // Cross-region inference profile (required for on-demand access)
-      'arn:aws:bedrock:us-east-2::foundation-model/us.anthropic.claude-3-haiku-20240307-v1:0',
-      // Also allow direct model access as fallback
-      'arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-3-haiku-20240307-v1:0',
-      'arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0',
+      // Allow all foundation models in any region
+      'arn:aws:bedrock:*::foundation-model/*',
+      // Allow all inference profiles in any region
+      'arn:aws:bedrock:*:*:inference-profile/*',
     ],
+  })
+);
+
+// Grant AWS Marketplace permissions for auto-enabling Bedrock models
+// Required for first-time model access (one-time subscription)
+backend.photoAiAnalysis.resources.lambda.addToRolePolicy(
+  new PolicyStatement({
+    actions: ['aws-marketplace:ViewSubscriptions', 'aws-marketplace:Subscribe'],
+    resources: ['*'],
   })
 );
 

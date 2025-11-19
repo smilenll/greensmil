@@ -2,29 +2,54 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PhotoAIAnalysis } from '@/actions/photo-actions';
+import { Sparkles } from 'lucide-react';
 
 interface PhotoAIReportProps {
   analysis: PhotoAIAnalysis;
 }
 
-const ScoreIndicator = ({ score }: { score: number }) => {
+const ScoreIndicator = ({ score, label }: { score: number; label: string }) => {
   const getColor = (score: number) => {
-    if (score >= 4) return 'bg-green-500';
-    if (score >= 3) return 'bg-yellow-500';
-    return 'bg-red-500';
+    if (score >= 4.5) return 'from-green-500 to-emerald-600';
+    if (score >= 4) return 'from-green-400 to-green-500';
+    if (score >= 3) return 'from-yellow-400 to-orange-500';
+    if (score >= 2) return 'from-orange-400 to-red-500';
+    return 'from-red-400 to-red-600';
   };
 
+  const getTextColor = (score: number) => {
+    if (score >= 4) return 'text-green-600 dark:text-green-400';
+    if (score >= 3) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
+  };
+
+  const percentage = (score / 5) * 100;
+
   return (
-    <div className="flex items-center gap-1">
-      {[1, 2, 3, 4, 5].map((value) => (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {[1, 2, 3, 4, 5].map((value) => (
+            <div
+              key={value}
+              className={`h-2 w-2 rounded-full transition-all duration-300 ${
+                value <= score
+                  ? `bg-gradient-to-r ${getColor(score)} shadow-sm`
+                  : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+            />
+          ))}
+        </div>
+        <span className={`font-bold text-xl ${getTextColor(score)}`}>
+          {score.toFixed(1)}
+        </span>
+      </div>
+      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
-          key={value}
-          className={`h-3 w-3 rounded-full ${
-            value <= score ? getColor(score) : 'bg-gray-200 dark:bg-gray-700'
-          }`}
+          className={`h-full bg-gradient-to-r ${getColor(score)} transition-all duration-500 ease-out rounded-full`}
+          style={{ width: `${percentage}%` }}
         />
-      ))}
-      <span className="ml-2 font-semibold text-lg">{score}/5</span>
+      </div>
     </div>
   );
 };
@@ -68,63 +93,89 @@ export function PhotoAIReport({ analysis }: PhotoAIReportProps) {
     },
   ];
 
+  const getOverallRating = (score: number) => {
+    if (score >= 4.5) return { text: 'Outstanding', color: 'text-green-600 dark:text-green-400' };
+    if (score >= 4) return { text: 'Excellent', color: 'text-green-500 dark:text-green-400' };
+    if (score >= 3.5) return { text: 'Very Good', color: 'text-lime-600 dark:text-lime-400' };
+    if (score >= 3) return { text: 'Good', color: 'text-yellow-600 dark:text-yellow-400' };
+    if (score >= 2.5) return { text: 'Fair', color: 'text-orange-600 dark:text-orange-400' };
+    return { text: 'Needs Improvement', color: 'text-red-600 dark:text-red-400' };
+  };
+
+  const rating = getOverallRating(analysis.overall);
+
   return (
-    <div className="space-y-6">
-      <Card className="border-2 border-primary">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Overall Score Card */}
+      <Card className="border-2 border-primary/50 shadow-lg bg-gradient-to-br from-background to-primary/5">
         <CardHeader>
-          <CardTitle className="text-2xl flex items-center gap-2">
-            🤖 AI Photography Analysis
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-6 w-6 text-primary animate-pulse" />
+            <CardTitle className="text-2xl">AI Photography Analysis</CardTitle>
+          </div>
           <CardDescription>
             Professional assessment based on 5 essential photography principles
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-3 p-4 bg-primary/10 rounded-lg">
-            <div className="text-4xl font-bold text-primary">
-              {analysis.overall.toFixed(1)}
-            </div>
+          <div className="flex items-center justify-between p-6 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20">
             <div>
-              <div className="font-semibold text-lg">Overall Score</div>
-              <div className="text-sm text-muted-foreground">
-                Average of all categories
+              <div className="text-sm text-muted-foreground mb-1">Overall Score</div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-5xl font-bold text-primary">
+                  {analysis.overall.toFixed(1)}
+                </span>
+                <span className="text-2xl text-muted-foreground">/5.0</span>
+              </div>
+              <div className={`text-lg font-semibold mt-1 ${rating.color}`}>
+                {rating.text}
               </div>
             </div>
+            <div className="text-6xl opacity-20">🏆</div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Category Cards */}
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-        {categories.map((category) => (
-          <Card key={category.title} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{category.icon}</span>
-                  <div>
-                    <CardTitle className="text-lg">{category.title}</CardTitle>
-                    <CardDescription className="text-xs">
-                      {category.description}
-                    </CardDescription>
-                  </div>
+        {categories.map((category, index) => (
+          <Card
+            key={category.title}
+            className="hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border-l-4 border-l-primary/50 animate-in fade-in slide-in-from-bottom-4"
+            style={{ animationDelay: `${index * 100}ms` }}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-start gap-3">
+                <div className="text-3xl p-2 bg-primary/10 rounded-lg">
+                  {category.icon}
+                </div>
+                <div className="flex-1">
+                  <CardTitle className="text-lg mb-1">{category.title}</CardTitle>
+                  <CardDescription className="text-xs leading-relaxed">
+                    {category.description}
+                  </CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <ScoreIndicator score={category.score} />
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {category.rationale}
-              </p>
+            <CardContent className="space-y-4">
+              <ScoreIndicator score={category.score} label={category.title} />
+              <div className="pl-4 border-l-2 border-muted">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {category.rationale}
+                </p>
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <Card className="bg-muted/50">
-        <CardContent className="pt-6">
-          <p className="text-xs text-muted-foreground text-center">
-            Analysis powered by Claude AI (Anthropic) via AWS Bedrock
-          </p>
+      {/* Footer */}
+      <Card className="bg-muted/30 border-dashed">
+        <CardContent className="pt-6 pb-6">
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <Sparkles className="h-3 w-3" />
+            <span>Analysis powered by Claude 3 Haiku (Anthropic) via AWS Bedrock</span>
+          </div>
         </CardContent>
       </Card>
     </div>

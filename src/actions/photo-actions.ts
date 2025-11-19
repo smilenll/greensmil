@@ -590,6 +590,7 @@ export type PhotoAIAnalysis = {
  * Uses AWS Lambda + Bedrock (Claude) for cost-effective image analysis
  */
 export async function analyzePhotoWithAI(photoId: string): Promise<ActionResponse<PhotoAIAnalysis>> {
+  // Only new users with 15 credits can use thi functionality or payed users or admins
   return withRole('admin', async () => {
     try {
       // Get photo details
