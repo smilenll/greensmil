@@ -1,12 +1,16 @@
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
-import sharp from 'sharp';
+import Jimp from 'jimp';
 
 // Use region from environment or default to us-east-2
 const AWS_REGION = process.env.AWS_REGION_OVERRIDE || process.env.AWS_REGION || 'us-east-2';
 
 const s3Client = new S3Client({ region: AWS_REGION });
 const bedrockClient = new BedrockRuntimeClient({ region: AWS_REGION });
+
+// Claude's maximum image size (5 MB in base64)
+// Base64 encoding increases size by ~33%, so we need raw bytes to be < 3.75 MB
+const MAX_IMAGE_BYTES = 3.75 * 1024 * 1024;
 
 interface PhotoAnalysisResult {
   composition: {
@@ -59,46 +63,50 @@ export const handler = async (event: any) => {
       };
     }
 
-    // Resize image to keep under 3.5MB for Bedrock
-    let processedImageBytes = imageBytes;
-    const maxSizeBytes = 3.5 * 1024 * 1024; // 3.5MB
-    
-    if (imageBytes.length > maxSizeBytes) {
-      console.log(`Image too large (${(imageBytes.length / 1024 / 1024).toFixed(2)}MB), resizing...`);
-      
+    // Resize image if it exceeds Claude's size limit
+    let processedImageBytes: Uint8Array = imageBytes;
+
+    if (imageBytes.length > MAX_IMAGE_BYTES) {
+      console.log(`Image too large: ${(imageBytes.length / 1024 / 1024).toFixed(2)}MB, resizing...`);
+
       try {
-        // Initialize Sharp with error handling
-        // Sharp will be automatically installed with Linux binaries during Lambda deployment
-        const sharpInstance = sharp(Buffer.from(imageBytes));
-        
-        // Start with reasonable dimensions and adjust quality
+        // Load image with Jimp (pure JavaScript, works in Lambda)
+        const image = await Jimp.read(Buffer.from(imageBytes));
+        const { width, height } = image.bitmap;
+
+        // Calculate scale factor to fit within size limit
+        // Start with 80% of original size and iterate if needed
         let quality = 85;
-        let width = 1920;
-        
+        let scale = 0.8;
+        let resized: Buffer;
+
         do {
-          processedImageBytes = await sharpInstance
+          const newWidth = Math.round(width * scale);
+          const newHeight = Math.round(height * scale);
+
+          resized = await image
             .clone()
-            .resize(width, width, { fit: 'inside', withoutEnlargement: true })
-            .jpeg({ quality })
-            .toBuffer();
-          
-          // If still too large, reduce quality or size
-          if (processedImageBytes.length > maxSizeBytes) {
-            if (quality > 60) {
-              quality -= 10;
-            } else {
-              width = Math.floor(width * 0.8);
-              quality = 85;
-            }
+            .resize(newWidth, newHeight)
+            .quality(quality)
+            .getBufferAsync(Jimp.MIME_JPEG);
+
+          console.log(
+            `Tried ${newWidth}x${newHeight} at quality ${quality}: ${(resized.length / 1024 / 1024).toFixed(2)}MB`
+          );
+
+          // If still too large, reduce scale and quality
+          if (resized.length > MAX_IMAGE_BYTES) {
+            scale *= 0.9;
+            quality = Math.max(60, quality - 5);
           }
-        } while (processedImageBytes.length > maxSizeBytes && width > 512);
-        
-        console.log(`Resized to ${(processedImageBytes.length / 1024 / 1024).toFixed(2)}MB`);
-      } catch (sharpError) {
-        console.error('Sharp processing error:', sharpError);
-        // If Sharp fails, try to use original image (may fail Bedrock if too large)
-        console.warn('Falling back to original image (may exceed Bedrock size limit)');
-        processedImageBytes = imageBytes;
+        } while (resized.length > MAX_IMAGE_BYTES && scale > 0.3);
+
+        processedImageBytes = new Uint8Array(resized);
+        console.log(`Final resized image: ${(processedImageBytes.length / 1024 / 1024).toFixed(2)}MB`);
+      } catch (resizeError) {
+        console.error('Image resize error:', resizeError);
+        // If resize fails, try original (may fail Bedrock if too large)
+        console.warn('Falling back to original image');
       }
     }
 
