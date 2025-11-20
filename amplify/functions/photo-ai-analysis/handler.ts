@@ -1,11 +1,15 @@
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
+import sharp from 'sharp';
 
 // Use region from environment or default to us-east-2
 const AWS_REGION = process.env.AWS_REGION_OVERRIDE || process.env.AWS_REGION || 'us-east-2';
 
 const s3Client = new S3Client({ region: AWS_REGION });
 const bedrockClient = new BedrockRuntimeClient({ region: AWS_REGION });
+
+// Claude's base64 limit is 5MB, which equals ~3.75MB raw bytes
+const MAX_IMAGE_BYTES = 3.75 * 1024 * 1024;
 
 interface PhotoAnalysisResult {
   composition: {
@@ -29,6 +33,54 @@ interface PhotoAnalysisResult {
     rationale: string;
   };
   overall: number;
+}
+
+/**
+ * Resize image if it exceeds the maximum size for Claude API
+ */
+async function resizeImageIfNeeded(imageBytes: Uint8Array): Promise<Buffer> {
+  const buffer = Buffer.from(imageBytes);
+
+  // If image is already small enough, return as-is
+  if (buffer.length <= MAX_IMAGE_BYTES) {
+    console.log(`Image size OK: ${(buffer.length / 1024 / 1024).toFixed(2)}MB`);
+    return buffer;
+  }
+
+  console.log(`Resizing image from ${(buffer.length / 1024 / 1024).toFixed(2)}MB`);
+
+  // Get image metadata
+  const metadata = await sharp(buffer).metadata();
+  const { width = 1, height = 1 } = metadata;
+
+  // Start with quality 85% and scale 0.8
+  let quality = 85;
+  let scale = 0.8;
+  let resized: Buffer;
+
+  // Iteratively reduce size until it fits
+  do {
+    const newWidth = Math.round(width * scale);
+    const newHeight = Math.round(height * scale);
+
+    resized = await sharp(buffer)
+      .resize(newWidth, newHeight, { fit: 'inside' })
+      .jpeg({ quality, mozjpeg: true })
+      .toBuffer();
+
+    console.log(
+      `Tried ${newWidth}x${newHeight} at ${quality}% quality: ${(resized.length / 1024 / 1024).toFixed(2)}MB`
+    );
+
+    // If still too large, reduce scale and quality
+    if (resized.length > MAX_IMAGE_BYTES) {
+      scale *= 0.9;
+      quality = Math.max(60, quality - 5);
+    }
+  } while (resized.length > MAX_IMAGE_BYTES && scale > 0.3);
+
+  console.log(`Final size: ${(resized.length / 1024 / 1024).toFixed(2)}MB`);
+  return resized;
 }
 
 export const handler = async (event: any) => {
@@ -58,8 +110,8 @@ export const handler = async (event: any) => {
       };
     }
 
-    // Images are pre-compressed on client side to < 3MB
-    // No server-side resizing needed
+    // Resize image if needed (handles both old large images and new compressed ones)
+    const processedImageBytes = await resizeImageIfNeeded(imageBytes);
 
     // Prepare prompt for Claude
     const prompt = `You are a professional photography critic and judge. Analyze this photograph based on these five essential principles of photography:
@@ -115,7 +167,7 @@ Respond in this exact JSON format:
               source: {
                 type: 'base64',
                 media_type: 'image/jpeg',
-                data: Buffer.from(imageBytes).toString('base64'),
+                data: processedImageBytes.toString('base64'),
               },
             },
             {
