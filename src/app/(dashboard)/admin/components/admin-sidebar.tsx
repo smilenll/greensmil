@@ -70,22 +70,7 @@ const menuItems = [
     icon: Settings,
     href: '/admin/settings',
     items: [
-      { title: 'General', icon: Settings, href: '/admin/settings' },
-      { title: 'Security', icon: Lock, href: '/admin/settings/security' },
-      { title: 'Monitoring', icon: Monitor, href: '/admin/settings/monitoring' },
-      { title: 'Notifications', icon: Bell, href: '/admin/settings/notifications' },
-      { title: 'Data Migration', icon: RefreshCw, href: '/admin/settings/migrations' },
-    ],
-  },
-  {
-    title: 'Database Operations',
-    icon: Database,
-    href: '/admin/database',
-    items: [
-      { title: 'Query Builder', icon: Database, href: '/admin/database' },
-      { title: 'Backups', icon: FileText, href: '/admin/database/backups' },
-      { title: 'Analytics', icon: BarChart3, href: '/admin/database/analytics' },
-      { title: 'Performance', icon: Activity, href: '/admin/database/performance' },
+          { title: 'Data Migration', icon: RefreshCw, href: '/admin/settings/migrations' },
     ],
   },
 ];
@@ -141,7 +126,7 @@ export default function AdminSidebar() {
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton className="w-full" asChild>
-                        <Link href={group.href}>
+                        <div className={'cursor-pointer'}>
                           <group.icon className="h-4 w-4" />
                           <span>{group.title}</span>
                           <ChevronDown
@@ -149,7 +134,7 @@ export default function AdminSidebar() {
                               openGroups.includes(group.title) ? 'rotate-180' : ''
                             }`}
                           />
-                        </Link>
+                        </div>
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
