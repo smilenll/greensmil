@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { signUp } from 'aws-amplify/auth';
-import { Button, Input } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { FormInput } from '@/components/form-fields';
 import { Loader2 } from 'lucide-react';
 import { useRecaptcha } from '@/hooks/use-recaptcha';
 import { verifyRecaptcha } from '@/actions/recaptcha-actions';
@@ -89,78 +90,58 @@ export function SignUpStepRegister({ onSuccess }: SignUpStepRegisterProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <label htmlFor="email" className="text-sm font-medium">
-          Email
-        </label>
-        <Input
-          id="email"
-          type="email"
-          autoComplete="email"
-          {...register('email', {
-            required: 'Email is required',
-            pattern: {
-              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-              message: 'Invalid email address'
-            }
-          })}
-          placeholder="you@example.com"
-          disabled={isSubmitting}
-        />
-        {errors.email && (
-          <p className="text-sm text-destructive">{errors.email.message}</p>
-        )}
-      </div>
+      <FormInput
+        label="Email"
+        type="email"
+        autoComplete="email"
+        placeholder="you@example.com"
+        required
+        registration={register('email', {
+          required: 'Email is required',
+          pattern: {
+            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+            message: 'Invalid email address'
+          }
+        })}
+        error={errors.email?.message}
+        disabled={isSubmitting}
+      />
 
-      <div className="space-y-2">
-        <label htmlFor="password" className="text-sm font-medium">
-          Password
-        </label>
-        <Input
-          id="password"
-          type="password"
-          autoComplete="new-password"
-          {...register('password', {
-            required: 'Password is required',
-            minLength: {
-              value: 8,
-              message: 'Password must be at least 8 characters'
-            },
-            pattern: {
-              value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-              message: 'Password must contain uppercase, lowercase, number and special character'
-            }
-          })}
-          placeholder="••••••••"
-          disabled={isSubmitting}
-        />
-        {errors.password && (
-          <p className="text-sm text-destructive">{errors.password.message}</p>
-        )}
-        <p className="text-xs text-muted-foreground">
-          At least 8 characters with uppercase, lowercase, number and special character
-        </p>
-      </div>
+      <FormInput
+        label="Password"
+        type="password"
+        autoComplete="new-password"
+        placeholder="••••••••"
+        required
+        registration={register('password', {
+          required: 'Password is required',
+          minLength: {
+            value: 8,
+            message: 'Password must be at least 8 characters'
+          },
+          pattern: {
+            value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+            message: 'Password must contain uppercase, lowercase, number and special character'
+          }
+        })}
+        error={errors.password?.message}
+        hint="At least 8 characters with uppercase, lowercase, number and special character"
+        disabled={isSubmitting}
+      />
 
-      <div className="space-y-2">
-        <label htmlFor="confirmPassword" className="text-sm font-medium">
-          Confirm Password
-        </label>
-        <Input
-          id="confirmPassword"
-          type="password"
-          autoComplete="new-password"
-          {...register('confirmPassword', {
-            required: 'Please confirm your password',
-            validate: value => value === password || 'Passwords do not match'
-          })}
-          placeholder="••••••••"
-          disabled={isSubmitting}
-        />
-        {errors.confirmPassword && (
-          <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
-        )}
-      </div>
+      <FormInput
+        label="Confirm Password"
+        type="password"
+        autoComplete="new-password"
+        placeholder="••••••••"
+        required
+        registration={register('confirmPassword', {
+          required: 'Please confirm your password',
+          validate: value => value === password || 'Passwords do not match'
+        })}
+        error={errors.confirmPassword?.message}
+        disabled={isSubmitting}
+      />
 
       {error && (
         <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">

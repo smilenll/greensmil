@@ -6,8 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { updatePhoto, deletePhoto, type Photo } from "@/actions/photo-actions";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { FormInput, FormTextarea } from "@/components/form-fields";
 import { optimizeImageClient } from "@/lib/client-image-optimizer";
 import Image from "next/image";
 import { Loader2, Upload, X, Trash2 } from "lucide-react";
@@ -153,35 +152,24 @@ export function PhotoEditForm({ photo, onSuccess }: PhotoEditFormProps) {
     <div className="border rounded-lg p-6 space-y-6">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {/* Title */}
-        <div>
-          <label htmlFor="title" className="text-sm font-medium">
-            Title *
-          </label>
-          <Input
-            id="title"
-            {...register('title')}
-            disabled={isSubmitting || isOptimizing}
-          />
-          {errors.title && (
-            <p className="text-sm text-destructive mt-1">{errors.title.message}</p>
-          )}
-        </div>
+        <FormInput
+          label="Title"
+          required
+          registration={register('title')}
+          error={errors.title?.message}
+          disabled={isSubmitting || isOptimizing}
+        />
 
         {/* Description */}
-        <div>
-          <label htmlFor="description" className="text-sm font-medium">
-            Description
-          </label>
-          <Textarea
-            id="description"
-            {...register('description')}
-            rows={4}
-            disabled={isSubmitting || isOptimizing}
-          />
-          {errors.description && (
-            <p className="text-sm text-destructive mt-1">{errors.description.message}</p>
-          )}
-        </div>
+        <FormTextarea
+          label="Description"
+          rows={4}
+          registration={register('description')}
+          error={errors.description?.message}
+          disabled={isSubmitting || isOptimizing}
+          value={photo.description || ''}
+          editor
+        />
 
         {/* Image Upload Section */}
         <div>

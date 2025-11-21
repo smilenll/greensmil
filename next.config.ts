@@ -30,6 +30,8 @@ const nextConfig: NextConfig = {
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
     RESEND_TO_EMAIL: process.env.RESEND_TO_EMAIL,
+    // TinyMCE Editor
+    NEXT_PUBLIC_TEXT_EDITOR: process.env.NEXT_PUBLIC_TEXT_EDITOR,
     // Deployment status card (AMPLIFY_APP_ID must be set manually)
     AMPLIFY_APP_ID: process.env.AMPLIFY_APP_ID,
     AMPLIFY_BRANCH_NAME: process.env.AMPLIFY_BRANCH_NAME,

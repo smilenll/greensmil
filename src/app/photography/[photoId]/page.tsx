@@ -6,6 +6,7 @@ import { PhotoAIReport } from '@/components/photography/photo-ai-report';
 import { PhotoAIAnalysisButton } from '@/components/photography/photo-ai-analysis-button';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SafeHtml } from '@/components/ui/safe-html';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { requireAuth } from '@/lib/auth-server';
@@ -20,7 +21,6 @@ export default async function PhotoPage({ params }: PhotoPageProps) {
   const { photoId } = await params;
 
   const response = await getPhotoById(photoId);
-
   if (response.status === 'unauthorized') {
     return (
       <div className="min-h-screen pt-28 pb-16 px-4 lg:px-6">
@@ -92,9 +92,10 @@ export default async function PhotoPage({ params }: PhotoPageProps) {
             <h1 className="text-2xl font-bold">{photo.title}</h1>
 
             {photo.description && (
-              <p className="text-base text-muted-foreground whitespace-pre-line">
-                {photo.description}
-              </p>
+              <SafeHtml
+                html={photo.description}
+                className="text-base text-muted-foreground"
+              />
             )}
 
             <div className="flex items-center justify-between pt-2 border-t">

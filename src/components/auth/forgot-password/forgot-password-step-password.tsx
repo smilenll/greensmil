@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { confirmResetPassword } from 'aws-amplify/auth';
-import { Button, Input } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { FormInput } from '@/components/form-fields';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 interface PasswordFormData {
@@ -81,56 +82,42 @@ export function ForgotPasswordStepPassword({
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="newPassword" className="text-sm font-medium">
-            New Password
-          </label>
-          <Input
-            id="newPassword"
-            type="password"
-            autoComplete="new-password"
-            {...register('newPassword', {
-              required: 'Password is required',
-              minLength: {
-                value: 8,
-                message: 'Password must be at least 8 characters'
-              },
-              pattern: {
-                value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-                message: 'Password must contain uppercase, lowercase, number and special character'
-              }
-            })}
-            placeholder="••••••••"
-            autoFocus
-            disabled={isSubmitting}
-          />
-          {errors.newPassword && (
-            <p className="text-sm text-destructive">{errors.newPassword.message}</p>
-          )}
-          <p className="text-xs text-muted-foreground">
-            At least 8 characters with uppercase, lowercase, number and special character
-          </p>
-        </div>
+        <FormInput
+          label="New Password"
+          type="password"
+          autoComplete="new-password"
+          placeholder="••••••••"
+          required
+          registration={register('newPassword', {
+            required: 'Password is required',
+            minLength: {
+              value: 8,
+              message: 'Password must be at least 8 characters'
+            },
+            pattern: {
+              value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+              message: 'Password must contain uppercase, lowercase, number and special character'
+            }
+          })}
+          error={errors.newPassword?.message}
+          hint="At least 8 characters with uppercase, lowercase, number and special character"
+          autoFocus
+          disabled={isSubmitting}
+        />
 
-        <div className="space-y-2">
-          <label htmlFor="confirmPassword" className="text-sm font-medium">
-            Confirm Password
-          </label>
-          <Input
-            id="confirmPassword"
-            type="password"
-            autoComplete="new-password"
-            {...register('confirmPassword', {
-              required: 'Please confirm your password',
-              validate: value => value === newPassword || 'Passwords do not match'
-            })}
-            placeholder="••••••••"
-            disabled={isSubmitting}
-          />
-          {errors.confirmPassword && (
-            <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
-          )}
-        </div>
+        <FormInput
+          label="Confirm Password"
+          type="password"
+          autoComplete="new-password"
+          placeholder="••••••••"
+          required
+          registration={register('confirmPassword', {
+            required: 'Please confirm your password',
+            validate: value => value === newPassword || 'Passwords do not match'
+          })}
+          error={errors.confirmPassword?.message}
+          disabled={isSubmitting}
+        />
 
         {error && (
           <div className="flex items-start gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-md">

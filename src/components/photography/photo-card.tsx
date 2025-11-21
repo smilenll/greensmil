@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { SafeHtml } from '@/components/ui/safe-html';
 import { Loader2 } from 'lucide-react';
 import { AmplifyImage } from './amplify-image';
 import type { Photo } from '@/actions/photo-actions';
@@ -47,9 +48,10 @@ export function PhotoCard({ photo, isLoading, onImageLoad, onImageError, actions
       >
         <CardTitle className="line-clamp-1">{photo.title}</CardTitle>
         {photo.description && (
-          <CardDescription className="line-clamp-2 mt-1.5">
-            {photo.description}
-          </CardDescription>
+          <SafeHtml
+            html={photo.description}
+            className="line-clamp-2 mt-1.5 text-muted-foreground [&>*]:my-0"
+          />
         )}
       </CardHeader>
 

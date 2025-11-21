@@ -2,6 +2,7 @@
 
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { SafeHtml } from '@/components/ui/safe-html';
 import { Heart } from 'lucide-react';
 import type { Photo } from '@/actions/photo-actions';
 import { PictureFrame } from './picture-frame';
@@ -33,9 +34,10 @@ export function PhotoDialog({ photo, onClose, onLike, likingId, isAuthenticated 
               <DialogTitle className="text-lg md:text-xl">{photo.title}</DialogTitle>
 
               {photo.description && (
-                <p className="text-sm md:text-base text-muted-foreground whitespace-pre-line">
-                  {photo.description}
-                </p>
+                <SafeHtml
+                  html={photo.description}
+                  className="text-sm md:text-base text-muted-foreground"
+                />
               )}
 
               {/* Likes */}
