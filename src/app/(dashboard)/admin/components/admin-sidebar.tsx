@@ -20,7 +20,8 @@ import {
   Upload,
   Image as ImageIcon,
   Home,
-  LayoutDashboard
+  LayoutDashboard,
+  RefreshCw
 } from 'lucide-react';
 import {
   Sidebar,
@@ -73,6 +74,7 @@ const menuItems = [
       { title: 'Security', icon: Lock, href: '/admin/settings/security' },
       { title: 'Monitoring', icon: Monitor, href: '/admin/settings/monitoring' },
       { title: 'Notifications', icon: Bell, href: '/admin/settings/notifications' },
+      { title: 'Data Migration', icon: RefreshCw, href: '/admin/settings/migrations' },
     ],
   },
   {

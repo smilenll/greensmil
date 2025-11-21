@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: 'standalone', // Required for AWS Amplify SSR support
 
+  // Increase header size limit to handle large Cognito JWT tokens
+  // This prevents 431 errors when users have multiple groups or custom attributes
+  serverExternalPackages: ['@aws-sdk/client-cognito-identity-provider'],
+
   experimental: {
     // TODO: Enable PPR when upgrading to Next.js 16 (stable) and verify Amplify support
     // PPR (Partial Prerendering) is currently only available in Next.js canary builds

@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "NODE_OPTIONS='--max-http-header-size=32768' next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "start": "NODE_OPTIONS='--max-http-header-size=32768' next start",
+    "lint": "next lint",
+    "migrate:ai-data": "tsx scripts/migrate-legacy-ai-data.ts"
   },
   "dependencies": {
     "@aws-amplify/adapter-nextjs": "^1.6.9",
