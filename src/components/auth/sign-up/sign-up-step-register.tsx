@@ -27,7 +27,14 @@ export function SignUpStepRegister({ onSuccess }: SignUpStepRegisterProps) {
     handleSubmit,
     formState: { errors, isSubmitting },
     watch
-  } = useForm<SignUpData>();
+  } = useForm<SignUpData>({
+    mode: 'onTouched',
+    defaultValues: {
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+  });
 
   const password = watch('password');
 

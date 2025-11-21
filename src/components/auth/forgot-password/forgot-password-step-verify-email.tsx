@@ -29,7 +29,12 @@ export function ForgotPasswordStepVerifyEmail({
     register,
     handleSubmit,
     formState: { errors, isSubmitting }
-  } = useForm<VerifyCodeData>();
+  } = useForm<VerifyCodeData>({
+    mode: 'onTouched',
+    defaultValues: {
+      code: '',
+    },
+  });
 
   const onSubmit = async (data: VerifyCodeData) => {
     try {

@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { updatePhoto, deletePhoto, type Photo } from "@/actions/photo-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +15,14 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { PhotoAIAnalysisButton } from "@/components/photography/photo-ai-analysis-button";
 
+// Validation schema
+const photoEditSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(100, 'Title must be less than 100 characters'),
+  description: z.string().max(500, 'Description must be less than 500 characters').optional(),
+});
+
+type PhotoEditFormData = z.infer<typeof photoEditSchema>;
+
 interface PhotoEditFormProps {
   photo: Photo;
   onSuccess: (updatedPhoto: Photo) => void;
@@ -19,12 +30,24 @@ interface PhotoEditFormProps {
 
 export function PhotoEditForm({ photo, onSuccess }: PhotoEditFormProps) {
   const router = useRouter();
-  const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optimizationProgress, setOptimizationProgress] = useState<number>(0);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<PhotoEditFormData>({
+    resolver: zodResolver(photoEditSchema),
+    mode: 'onTouched',
+    defaultValues: {
+      title: photo.title,
+      description: photo.description || '',
+    },
+  });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -65,18 +88,7 @@ export function PhotoEditForm({ photo, onSuccess }: PhotoEditFormProps) {
     };
   }, [newImagePreview]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const formData = new FormData(e.currentTarget);
-    const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-
-    if (!title.trim()) {
-      toast.error('Title is required');
-      return;
-    }
-
+  const onSubmit = async (data: PhotoEditFormData) => {
     try {
       let fileToUpload = newImageFile;
 
@@ -96,11 +108,10 @@ export function PhotoEditForm({ photo, onSuccess }: PhotoEditFormProps) {
         fileToUpload = optimized.file;
       }
 
-      setIsUpdating(true);
       const response = await updatePhoto({
         id: photo.id,
-        title: title.trim(),
-        description: description.trim() || undefined,
+        title: data.title.trim(),
+        description: data.description?.trim() || undefined,
         file: fileToUpload || undefined,
       });
 
@@ -113,11 +124,8 @@ export function PhotoEditForm({ photo, onSuccess }: PhotoEditFormProps) {
       } else {
         toast.error(response.error || 'Failed to update photo');
       }
-
-      setIsUpdating(false);
     } catch (error) {
       setIsOptimizing(false);
-      setIsUpdating(false);
       setOptimizationProgress(0);
       toast.error(error instanceof Error ? error.message : 'Update failed');
     }
@@ -143,7 +151,7 @@ export function PhotoEditForm({ photo, onSuccess }: PhotoEditFormProps) {
 
   return (
     <div className="border rounded-lg p-6 space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {/* Title */}
         <div>
           <label htmlFor="title" className="text-sm font-medium">
@@ -151,11 +159,12 @@ export function PhotoEditForm({ photo, onSuccess }: PhotoEditFormProps) {
           </label>
           <Input
             id="title"
-            name="title"
-            defaultValue={photo.title}
-            required
-            disabled={isUpdating || isOptimizing}
+            {...register('title')}
+            disabled={isSubmitting || isOptimizing}
           />
+          {errors.title && (
+            <p className="text-sm text-destructive mt-1">{errors.title.message}</p>
+          )}
         </div>
 
         {/* Description */}
@@ -165,11 +174,13 @@ export function PhotoEditForm({ photo, onSuccess }: PhotoEditFormProps) {
           </label>
           <Textarea
             id="description"
-            name="description"
-            defaultValue={photo.description || ''}
+            {...register('description')}
             rows={4}
-            disabled={isUpdating || isOptimizing}
+            disabled={isSubmitting || isOptimizing}
           />
+          {errors.description && (
+            <p className="text-sm text-destructive mt-1">{errors.description.message}</p>
+          )}
         </div>
 
         {/* Image Upload Section */}
@@ -208,7 +219,7 @@ export function PhotoEditForm({ photo, onSuccess }: PhotoEditFormProps) {
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
-                disabled={isUpdating || isOptimizing}
+                disabled={isSubmitting || isOptimizing}
                 className="hidden"
               />
             </label>
@@ -224,7 +235,7 @@ export function PhotoEditForm({ photo, onSuccess }: PhotoEditFormProps) {
               <button
                 type="button"
                 onClick={handleRemoveNewImage}
-                disabled={isUpdating || isOptimizing}
+                disabled={isSubmitting || isOptimizing}
                 className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full"
               >
                 <X className="h-4 w-4" />
@@ -250,7 +261,7 @@ export function PhotoEditForm({ photo, onSuccess }: PhotoEditFormProps) {
         <div className="flex gap-2">
           <Button
             type="submit"
-            disabled={isUpdating || isOptimizing || isDeleting}
+            disabled={isSubmitting || isOptimizing || isDeleting}
             className="flex-1"
           >
             {isOptimizing ? (
@@ -258,7 +269,7 @@ export function PhotoEditForm({ photo, onSuccess }: PhotoEditFormProps) {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Optimizing... {optimizationProgress}%
               </>
-            ) : isUpdating ? (
+            ) : isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Updating...
@@ -287,7 +298,7 @@ export function PhotoEditForm({ photo, onSuccess }: PhotoEditFormProps) {
           <Button
             variant="destructive"
             onClick={handleDelete}
-            disabled={isDeleting || isUpdating || isOptimizing}
+            disabled={isDeleting || isSubmitting || isOptimizing}
             className="w-full justify-start"
           >
             {isDeleting ? (

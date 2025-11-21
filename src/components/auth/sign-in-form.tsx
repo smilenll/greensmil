@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { signIn } from 'aws-amplify/auth';
-import { Button, Input } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { FormInput } from '@/components/form-fields';
 import { Loader2 } from 'lucide-react';
 import { useRecaptcha } from '@/hooks/use-recaptcha';
 import { verifyRecaptcha } from '@/actions/recaptcha-actions';
@@ -20,7 +21,13 @@ interface SignInFormProps {
 
 export function SignInForm({ onSuccess, onForgotPassword }: SignInFormProps) {
   const [error, setError] = useState('');
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<SignInFormData>();
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<SignInFormData>({
+    mode: 'onTouched',
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
   const { executeRecaptcha } = useRecaptcha();
 
   const onSubmit = async (data: SignInFormData) => {
@@ -42,13 +49,14 @@ export function SignInForm({ onSuccess, onForgotPassword }: SignInFormProps) {
       }
 
       const signInResult = await signIn({ username: data.email, password: data.password });
-      
+
       // Check if user needs to verify their email
       if (signInResult.nextStep?.signInStep === 'CONFIRM_SIGN_UP') {
         setError('Please verify your email address before signing in. Check your inbox for a verification code.');
         return;
       }
-      
+
+      reset();
       onSuccess?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign in failed');
@@ -57,27 +65,33 @@ export function SignInForm({ onSuccess, onForgotPassword }: SignInFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <label htmlFor="email" className="text-sm font-medium">Email</label>
-        <Input
-          id="email"
-          type="email"
-          {...register('email', { required: 'Email is required' })}
-          placeholder="you@example.com"
-        />
-        {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-      </div>
+      <FormInput
+        label="Email"
+        type="email"
+        autoComplete="email"
+        placeholder="you@example.com"
+        required
+        registration={register('email', {
+          required: 'Email is required',
+          pattern: {
+            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+            message: 'Invalid email address'
+          }
+        })}
+        error={errors.email?.message}
+        disabled={isSubmitting}
+      />
 
-      <div className="space-y-2">
-        <label htmlFor="password" className="text-sm font-medium">Password</label>
-        <Input
-          id="password"
-          type="password"
-          {...register('password', { required: 'Password is required' })}
-          placeholder="••••••••"
-        />
-        {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
-      </div>
+      <FormInput
+        label="Password"
+        type="password"
+        autoComplete="current-password"
+        placeholder="••••••••"
+        required
+        registration={register('password', { required: 'Password is required' })}
+        error={errors.password?.message}
+        disabled={isSubmitting}
+      />
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 

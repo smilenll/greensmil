@@ -42,6 +42,11 @@ export function PhotoUploadForm() {
     formState: { errors, isSubmitting },
   } = useForm<PhotoFormData>({
     resolver: zodResolver(photoFormSchema),
+    mode: 'onTouched',
+    defaultValues: {
+      title: '',
+      description: '',
+    },
   });
 
   const fileList = watch('file');

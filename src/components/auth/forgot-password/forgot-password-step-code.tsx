@@ -29,7 +29,12 @@ export function ForgotPasswordStepCode({
     register,
     handleSubmit,
     formState: { errors, isSubmitting }
-  } = useForm<CodeFormData>();
+  } = useForm<CodeFormData>({
+    mode: 'onTouched',
+    defaultValues: {
+      code: '',
+    },
+  });
 
   const onSubmit = async (data: CodeFormData) => {
     try {

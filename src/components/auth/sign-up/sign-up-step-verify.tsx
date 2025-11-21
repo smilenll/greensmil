@@ -25,7 +25,12 @@ export function SignUpStepVerify({ email, onSuccess, onCancel }: SignUpStepVerif
     register,
     handleSubmit,
     formState: { errors, isSubmitting }
-  } = useForm<VerifyCodeData>();
+  } = useForm<VerifyCodeData>({
+    mode: 'onTouched',
+    defaultValues: {
+      code: '',
+    },
+  });
 
   const onSubmit = async (data: VerifyCodeData) => {
     try {

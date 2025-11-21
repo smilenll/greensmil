@@ -27,7 +27,12 @@ export function ForgotPasswordStepEmail({
     register,
     handleSubmit,
     formState: { errors, isSubmitting }
-  } = useForm<EmailFormData>();
+  } = useForm<EmailFormData>({
+    mode: 'onTouched',
+    defaultValues: {
+      email: '',
+    },
+  });
 
   const onSubmit = async (data: EmailFormData) => {
     try {

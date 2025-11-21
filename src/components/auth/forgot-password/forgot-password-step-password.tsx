@@ -31,7 +31,13 @@ export function ForgotPasswordStepPassword({
     handleSubmit,
     formState: { errors, isSubmitting },
     watch
-  } = useForm<PasswordFormData>();
+  } = useForm<PasswordFormData>({
+    mode: 'onTouched',
+    defaultValues: {
+      newPassword: '',
+      confirmPassword: '',
+    },
+  });
 
   const newPassword = watch('newPassword');
 

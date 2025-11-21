@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui';
+import { FormInput, FormTextarea } from '@/components/form-fields';
 import { sendContactEmail } from '@/actions/contact-actions';
 import { useRecaptcha } from '@/hooks/use-recaptcha';
 import type { ContactFormData } from '@/lib/email/email-provider';
@@ -18,6 +19,12 @@ export function ContactForm() {
     reset,
   } = useForm<ContactFormData>({
     mode: 'onTouched', // Validate when field is touched and loses focus
+    defaultValues: {
+      name: '',
+      email: '',
+      subject: '',
+      message: '',
+    },
   });
 
   const onSubmit = async (data: ContactFormData) => {
@@ -54,113 +61,85 @@ export function ContactForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <h3 className="text-2xl font-semibold">Send me a message</h3>
 
-      {/* Name Field */}
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium mb-2">
-          Name <span className="text-destructive">*</span>
-        </label>
-        <input
-          type="text"
-          id="name"
-          {...register('name', {
-            required: 'Name is required',
-            minLength: {
-              value: 2,
-              message: 'Name must be at least 2 characters',
-            },
-            maxLength: {
-              value: 50,
-              message: 'Name must not exceed 50 characters',
-            },
-            pattern: {
-              value: /^[a-zA-Z\s'-]+$/,
-              message: 'Name can only contain letters, spaces, hyphens, and apostrophes',
-            },
-          })}
-          className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="John Doe"
-        />
-        {errors.name && (
-          <p className="text-destructive text-sm mt-1">{errors.name.message}</p>
-        )}
-      </div>
+      <FormInput
+        label="Name"
+        type="text"
+        placeholder="John Doe"
+        required
+        registration={register('name', {
+          required: 'Name is required',
+          minLength: {
+            value: 2,
+            message: 'Name must be at least 2 characters',
+          },
+          maxLength: {
+            value: 50,
+            message: 'Name must not exceed 50 characters',
+          },
+          pattern: {
+            value: /^[a-zA-Z\s'-]+$/,
+            message: 'Name can only contain letters, spaces, hyphens, and apostrophes',
+          },
+        })}
+        error={errors.name?.message}
+        disabled={isSubmitting}
+      />
 
-      {/* Email Field */}
-      <div>
-        <label htmlFor="email" className="block text-sm font-medium mb-2">
-          Email <span className="text-destructive">*</span>
-        </label>
-        <input
-          type="email"
-          id="email"
-          {...register('email', {
-            required: 'Email is required',
-            pattern: {
-              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-              message: 'Invalid email address',
-            },
-          })}
-          className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="john@example.com"
-        />
-        {errors.email && (
-          <p className="text-destructive text-sm mt-1">{errors.email.message}</p>
-        )}
-      </div>
+      <FormInput
+        label="Email"
+        type="email"
+        placeholder="john@example.com"
+        required
+        registration={register('email', {
+          required: 'Email is required',
+          pattern: {
+            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+            message: 'Invalid email address',
+          },
+        })}
+        error={errors.email?.message}
+        disabled={isSubmitting}
+      />
 
-      {/* Subject Field */}
-      <div>
-        <label htmlFor="subject" className="block text-sm font-medium mb-2">
-          Subject <span className="text-destructive">*</span>
-        </label>
-        <input
-          type="text"
-          id="subject"
-          {...register('subject', {
-            required: 'Subject is required',
-            minLength: {
-              value: 3,
-              message: 'Subject must be at least 3 characters',
-            },
-            maxLength: {
-              value: 100,
-              message: 'Subject must not exceed 100 characters',
-            },
-          })}
-          className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="Project Inquiry"
-        />
-        {errors.subject && (
-          <p className="text-destructive text-sm mt-1">{errors.subject.message}</p>
-        )}
-      </div>
+      <FormInput
+        label="Subject"
+        type="text"
+        placeholder="Project Inquiry"
+        required
+        registration={register('subject', {
+          required: 'Subject is required',
+          minLength: {
+            value: 3,
+            message: 'Subject must be at least 3 characters',
+          },
+          maxLength: {
+            value: 100,
+            message: 'Subject must not exceed 100 characters',
+          },
+        })}
+        error={errors.subject?.message}
+        disabled={isSubmitting}
+      />
 
-      {/* Message Field */}
-      <div>
-        <label htmlFor="message" className="block text-sm font-medium mb-2">
-          Message <span className="text-destructive">*</span>
-        </label>
-        <textarea
-          id="message"
-          rows={6}
-          {...register('message', {
-            required: 'Message is required',
-            minLength: {
-              value: 10,
-              message: 'Message must be at least 10 characters',
-            },
-            maxLength: {
-              value: 1000,
-              message: 'Message must not exceed 1000 characters',
-            },
-          })}
-          className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-          placeholder="Tell me about your project..."
-        />
-        {errors.message && (
-          <p className="text-destructive text-sm mt-1">{errors.message.message}</p>
-        )}
-      </div>
+      <FormTextarea
+        label="Message"
+        rows={6}
+        placeholder="Tell me about your project..."
+        required
+        registration={register('message', {
+          required: 'Message is required',
+          minLength: {
+            value: 10,
+            message: 'Message must be at least 10 characters',
+          },
+          maxLength: {
+            value: 1000,
+            message: 'Message must not exceed 1000 characters',
+          },
+        })}
+        error={errors.message?.message}
+        disabled={isSubmitting}
+      />
 
       {/* Success/Error Message */}
       {submitMessage && (
