@@ -20,8 +20,8 @@ export default function SignUpPage() {
 
   const handleClose = () => {
     setIsOpen(false);
-    // Navigate back to home when dialog is closed
-    router.push('/');
+    // Navigate back to previous page when dialog is closed
+    router.back();
   };
 
   // Don't render if already authenticated
