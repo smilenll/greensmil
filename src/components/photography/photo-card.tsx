@@ -47,7 +47,7 @@ export function PhotoCard({ photo, isLoading, onImageLoad, onImageError, actions
       >
         <CardTitle className="line-clamp-1">{photo.title}</CardTitle>
         {photo.description && (
-          <CardDescription className="line-clamp-4 mt-1.5">
+          <CardDescription className="line-clamp-2 mt-1.5">
             {photo.description}
           </CardDescription>
         )}

@@ -10,7 +10,9 @@ const schema = a.schema({
       uploadedBy: a.string().required(), // User ID who uploaded
       likes: a.hasMany('PhotoLike', 'photoId'),
       likeCount: a.integer().default(0),
-      // AI Analysis fields
+      aiReports: a.hasMany('PhotoAIReport', 'photoId'),
+      // Legacy AI Analysis fields (kept for backward compatibility)
+      // New analyses will be stored in PhotoAIReport table
       aiAnalyzed: a.boolean().default(false), // Whether AI analysis has been performed
       // Composition
       aiCompositionScore: a.integer(), // Score 1-5
@@ -36,6 +38,36 @@ const schema = a.schema({
     .authorization((allow) => [
       allow.authenticated().to(['read']), // Only authenticated users can read
       allow.group('admin').to(['create', 'update', 'delete']),
+    ]),
+
+  PhotoAIReport: a
+    .model({
+      photoId: a.id().required(),
+      photo: a.belongsTo('Photo', 'photoId'),
+      // Composition
+      compositionScore: a.float().required(),
+      compositionRationale: a.string().required(),
+      // Lighting and Exposure
+      lightingScore: a.float().required(),
+      lightingRationale: a.string().required(),
+      // Subject and Storytelling
+      subjectScore: a.float().required(),
+      subjectRationale: a.string().required(),
+      // Technical Quality
+      technicalScore: a.float().required(),
+      technicalRationale: a.string().required(),
+      // Creativity and Originality
+      creativityScore: a.float().required(),
+      creativityRationale: a.string().required(),
+      // Overall
+      overallScore: a.float().required(),
+      analyzedAt: a.datetime().required(),
+      createdAt: a.datetime(),
+      updatedAt: a.datetime(),
+    })
+    .authorization((allow) => [
+      allow.authenticated().to(['read']),
+      allow.group('admin').to(['create', 'delete']),
     ]),
 
   PhotoLike: a

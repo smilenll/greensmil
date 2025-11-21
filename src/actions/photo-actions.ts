@@ -47,6 +47,24 @@ const cookieBasedClient = generateServerClientUsingCookies<Schema>({
   cookies,
 });
 
+export type PhotoAIReport = {
+  id: string;
+  photoId: string;
+  compositionScore: number;
+  compositionRationale: string;
+  lightingScore: number;
+  lightingRationale: string;
+  subjectScore: number;
+  subjectRationale: string;
+  technicalScore: number;
+  technicalRationale: string;
+  creativityScore: number;
+  creativityRationale: string;
+  overallScore: number;
+  analyzedAt: string;
+  createdAt: string;
+};
+
 export type Photo = {
   id: string;
   title: string;
@@ -57,7 +75,9 @@ export type Photo = {
   likeCount: number;
   isLikedByCurrentUser?: boolean;
   createdAt: string;
-  // AI Analysis fields
+  // AI Reports - new history-based approach
+  aiReports?: PhotoAIReport[];
+  // Legacy AI Analysis fields (kept for backward compatibility)
   aiAnalyzed?: boolean;
   aiCompositionScore?: number;
   aiCompositionRationale?: string;
@@ -99,6 +119,7 @@ export type UpdatePhotoInput = {
   id: string;
   title: string;
   description?: string;
+  file?: File;
 };
 
 /**
@@ -400,17 +421,33 @@ export async function getPhotoById(photoId: string): Promise<ActionResponse<Phot
       return error('Photo not found');
     }
 
-    // Check if user liked this photo
-    const { data: like } = await cookieBasedClient.models.PhotoLike.get({
-      photoId: photo.id,
-      userId: user.userId,
-    });
-    const isLiked = !!like;
+    // Fetch data in parallel
+    const [likeResult, allLikesResult] = await Promise.all([
+      cookieBasedClient.models.PhotoLike.get({
+        photoId: photo.id,
+        userId: user.userId,
+      }),
+      cookieBasedClient.models.PhotoLike.list({
+        filter: { photoId: { eq: photo.id } },
+      }),
+    ]);
 
-    // Get accurate like count from PhotoLike records
-    const { data: allLikes } = await cookieBasedClient.models.PhotoLike.list({
-      filter: { photoId: { eq: photo.id } },
-    });
+    const { data: like } = likeResult;
+    const { data: allLikes } = allLikesResult;
+
+    // Try to fetch AI reports (may fail if table doesn't exist yet)
+    let aiReportsData: any[] | null = null;
+    try {
+      const aiReportsResult = await cookieBasedClient.models.PhotoAIReport.list({
+        filter: { photoId: { eq: photo.id } },
+      });
+      aiReportsData = aiReportsResult.data;
+    } catch (error) {
+      console.log('[getPhotoById] PhotoAIReport table not available yet:', error);
+      aiReportsData = null;
+    }
+
+    const isLiked = !!like;
     const actualLikeCount = allLikes?.length || 0;
 
     // If the stored count doesn't match actual, update it silently
@@ -432,6 +469,28 @@ export async function getPhotoById(photoId: string): Promise<ActionResponse<Phot
       { expiresIn: 3600 } // 1 hour
     );
 
+    // Map AI reports to the expected format
+    const aiReports: PhotoAIReport[] = aiReportsData?.map(report => ({
+      id: report.id,
+      photoId: report.photoId,
+      compositionScore: report.compositionScore,
+      compositionRationale: report.compositionRationale,
+      lightingScore: report.lightingScore,
+      lightingRationale: report.lightingRationale,
+      subjectScore: report.subjectScore,
+      subjectRationale: report.subjectRationale,
+      technicalScore: report.technicalScore,
+      technicalRationale: report.technicalRationale,
+      creativityScore: report.creativityScore,
+      creativityRationale: report.creativityRationale,
+      overallScore: report.overallScore,
+      analyzedAt: report.analyzedAt!,
+      createdAt: report.createdAt!,
+    })) || [];
+
+    // Sort reports by analyzedAt descending (newest first)
+    aiReports.sort((a, b) => new Date(b.analyzedAt).getTime() - new Date(a.analyzedAt).getTime());
+
     return success({
       id: photo.id,
       title: photo.title,
@@ -442,7 +501,9 @@ export async function getPhotoById(photoId: string): Promise<ActionResponse<Phot
       likeCount: actualLikeCount,
       isLikedByCurrentUser: isLiked,
       createdAt: photo.createdAt!,
-      // AI Analysis fields
+      // AI Reports
+      aiReports,
+      // Legacy AI Analysis fields (kept for backward compatibility)
       aiAnalyzed: photo.aiAnalyzed || false,
       aiCompositionScore: photo.aiCompositionScore || undefined,
       aiCompositionRationale: photo.aiCompositionRationale || undefined,
@@ -461,14 +522,70 @@ export async function getPhotoById(photoId: string): Promise<ActionResponse<Phot
 }
 
 /**
- * Update a photo's title and description (Admin only)
+ * Update a photo's title, description, and optionally the image itself (Admin only)
  */
 export async function updatePhoto(input: UpdatePhotoInput): Promise<ActionResponse<Photo>> {
   return withRole('admin', async () => {
-    const { id, title, description } = input;
+    const { id, title, description, file } = input;
 
     if (!title) {
       return error('Title is required');
+    }
+
+    // Get the existing photo first
+    const { data: existingPhoto } = await cookieBasedClient.models.Photo.get({ id });
+    if (!existingPhoto) {
+      return error('Photo not found');
+    }
+
+    let newImageKey = existingPhoto.imageKey;
+    let newImageUrl = existingPhoto.imageUrl!;
+
+    // If a new file is provided, handle the image replacement
+    if (file) {
+      // Validate file
+      if (!file.type.startsWith('image/')) {
+        return error('Only image files are allowed');
+      }
+
+      console.log('[updatePhoto] Uploading new image:', file.name, `(${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+
+      // Generate new S3 key
+      const sanitizedName = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9-]/g, '_');
+      const extension = file.name.split('.').pop() || 'jpg';
+      newImageKey = `photos/${Date.now()}-${sanitizedName}.${extension}`;
+
+      // Get file buffer
+      const fileBuffer = await file.arrayBuffer();
+
+      // Upload new file to S3
+      await s3Client.send(
+        new PutObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: newImageKey,
+          Body: new Uint8Array(fileBuffer),
+          ContentType: file.type,
+        })
+      );
+
+      console.log('[updatePhoto] New image uploaded to S3:', newImageKey);
+
+      // Delete old file from S3
+      try {
+        await s3Client.send(
+          new DeleteObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: existingPhoto.imageKey,
+          })
+        );
+        console.log('[updatePhoto] Old image deleted from S3:', existingPhoto.imageKey);
+      } catch (deleteError) {
+        console.error('[updatePhoto] Failed to delete old image:', deleteError);
+        // Continue even if deletion fails
+      }
+
+      // Construct new public S3 URL
+      newImageUrl = `https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${newImageKey}`;
     }
 
     // Update photo record
@@ -476,6 +593,8 @@ export async function updatePhoto(input: UpdatePhotoInput): Promise<ActionRespon
       id,
       title,
       description: description || null,
+      imageKey: newImageKey,
+      imageUrl: newImageUrl,
     });
 
     if (!updatedPhoto) {
@@ -491,6 +610,8 @@ export async function updatePhoto(input: UpdatePhotoInput): Promise<ActionRespon
       }),
       { expiresIn: 3600 }
     );
+
+    console.log('[updatePhoto] Photo updated successfully:', id);
 
     revalidatePath('/photography');
     revalidatePath('/admin/photos');
@@ -647,8 +768,30 @@ export async function analyzePhotoWithAI(photoId: string): Promise<ActionRespons
       const result = JSON.parse(responsePayload.body);
       const analysis: PhotoAIAnalysis = result.analysis;
 
-      // Update photo with AI analysis results
-      const { data: updatedPhoto } = await cookieBasedClient.models.Photo.update({
+      // Try to create a new AI report (stores history) if table exists
+      try {
+        await cookieBasedClient.models.PhotoAIReport.create({
+          photoId,
+          compositionScore: analysis.composition.score,
+          compositionRationale: analysis.composition.rationale,
+          lightingScore: analysis.lighting.score,
+          lightingRationale: analysis.lighting.rationale,
+          subjectScore: analysis.subject.score,
+          subjectRationale: analysis.subject.rationale,
+          technicalScore: analysis.technical.score,
+          technicalRationale: analysis.technical.rationale,
+          creativityScore: analysis.creativity.score,
+          creativityRationale: analysis.creativity.rationale,
+          overallScore: analysis.overall,
+          analyzedAt: new Date().toISOString(),
+        });
+        console.log('[analyzePhotoWithAI] AI report created in PhotoAIReport table');
+      } catch (error) {
+        console.log('[analyzePhotoWithAI] PhotoAIReport table not available yet, using legacy storage:', error);
+      }
+
+      // Also update the Photo model with latest analysis (for backward compatibility)
+      await cookieBasedClient.models.Photo.update({
         id: photoId,
         aiAnalyzed: true,
         aiCompositionScore: analysis.composition.score,
@@ -664,10 +807,6 @@ export async function analyzePhotoWithAI(photoId: string): Promise<ActionRespons
         aiOverallScore: analysis.overall,
         aiAnalyzedAt: new Date().toISOString(),
       });
-
-      if (!updatedPhoto) {
-        return error('Failed to save analysis results');
-      }
 
       console.log('[analyzePhotoWithAI] Analysis saved successfully');
 
