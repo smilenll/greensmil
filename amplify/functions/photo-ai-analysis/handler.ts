@@ -1,15 +1,11 @@
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
-import sharp from 'sharp';
 
 // Use region from environment or default to us-east-2
 const AWS_REGION = process.env.AWS_REGION_OVERRIDE || process.env.AWS_REGION || 'us-east-2';
 
 const s3Client = new S3Client({ region: AWS_REGION });
 const bedrockClient = new BedrockRuntimeClient({ region: AWS_REGION });
-
-// Claude's base64 limit is 5MB, which equals ~3.75MB raw bytes
-const MAX_IMAGE_BYTES = 3.75 * 1024 * 1024;
 
 interface PhotoAnalysisResult {
   composition: {
@@ -33,54 +29,6 @@ interface PhotoAnalysisResult {
     rationale: string;
   };
   overall: number;
-}
-
-/**
- * Resize image if it exceeds the maximum size for Claude API
- */
-async function resizeImageIfNeeded(imageBytes: Uint8Array): Promise<Buffer> {
-  const buffer = Buffer.from(imageBytes);
-
-  // If image is already small enough, return as-is
-  if (buffer.length <= MAX_IMAGE_BYTES) {
-    console.log(`Image size OK: ${(buffer.length / 1024 / 1024).toFixed(2)}MB`);
-    return buffer;
-  }
-
-  console.log(`Resizing image from ${(buffer.length / 1024 / 1024).toFixed(2)}MB`);
-
-  // Get image metadata
-  const metadata = await sharp(buffer).metadata();
-  const { width = 1, height = 1 } = metadata;
-
-  // Start with quality 85% and scale 0.8
-  let quality = 85;
-  let scale = 0.8;
-  let resized: Buffer;
-
-  // Iteratively reduce size until it fits
-  do {
-    const newWidth = Math.round(width * scale);
-    const newHeight = Math.round(height * scale);
-
-    resized = await sharp(buffer)
-      .resize(newWidth, newHeight, { fit: 'inside' })
-      .jpeg({ quality, mozjpeg: true })
-      .toBuffer();
-
-    console.log(
-      `Tried ${newWidth}x${newHeight} at ${quality}% quality: ${(resized.length / 1024 / 1024).toFixed(2)}MB`
-    );
-
-    // If still too large, reduce scale and quality
-    if (resized.length > MAX_IMAGE_BYTES) {
-      scale *= 0.9;
-      quality = Math.max(60, quality - 5);
-    }
-  } while (resized.length > MAX_IMAGE_BYTES && scale > 0.3);
-
-  console.log(`Final size: ${(resized.length / 1024 / 1024).toFixed(2)}MB`);
-  return resized;
 }
 
 export const handler = async (event: any) => {
@@ -109,9 +57,6 @@ export const handler = async (event: any) => {
         body: JSON.stringify({ error: 'Failed to retrieve image' }),
       };
     }
-
-    // Resize image if needed (handles both old large images and new compressed ones)
-    const processedImageBytes = await resizeImageIfNeeded(imageBytes);
 
     // Prepare prompt for Claude
     const prompt = `You are a professional photography critic and judge. Analyze this photograph based on these five essential principles of photography:
@@ -157,7 +102,7 @@ Respond in this exact JSON format:
     // Call Bedrock with Claude Haiku (cheapest model)
     const payload = {
       anthropic_version: 'bedrock-2023-05-31',
-      max_tokens: 3000, // Increased to ensure Claude can complete the JSON even for detailed responses
+      max_tokens: 4000, // Increased to ensure Claude can complete the JSON even for detailed responses
       messages: [
         {
           role: 'user',
@@ -167,7 +112,7 @@ Respond in this exact JSON format:
               source: {
                 type: 'base64',
                 media_type: 'image/jpeg',
-                data: processedImageBytes.toString('base64'),
+                data: Buffer.from(imageBytes).toString('base64'),
               },
             },
             {
@@ -260,15 +205,40 @@ Respond in this exact JSON format:
       console.log('Attempting to fix incomplete JSON...');
       let fixedJson = jsonText.trim();
 
-      // Count open and close braces
-      let openBraces = (fixedJson.match(/\{/g) || []).length;
-      let closeBraces = (fixedJson.match(/\}/g) || []).length;
+      // Count open and close braces more carefully
+      let braceCount = 0;
+      let inString = false;
+      let escapeNext = false;
+
+      for (let i = 0; i < fixedJson.length; i++) {
+        const char = fixedJson[i];
+
+        if (escapeNext) {
+          escapeNext = false;
+          continue;
+        }
+
+        if (char === '\\') {
+          escapeNext = true;
+          continue;
+        }
+
+        if (char === '"') {
+          inString = !inString;
+          continue;
+        }
+
+        if (!inString) {
+          if (char === '{') braceCount++;
+          if (char === '}') braceCount--;
+        }
+      }
 
       // Add missing closing braces
-      if (openBraces > closeBraces) {
-        const missing = openBraces - closeBraces;
-        console.log(`Adding ${missing} missing closing brace(s)`);
-        fixedJson += '\n}'.repeat(missing);
+      if (braceCount > 0) {
+        console.log(`Adding ${braceCount} missing closing brace(s)`);
+        fixedJson += '}'.repeat(braceCount);
+        console.log('Fixed JSON:', fixedJson);
       }
 
       // Try parsing again
@@ -276,7 +246,8 @@ Respond in this exact JSON format:
         analysis = JSON.parse(fixedJson);
         console.log('Successfully fixed and parsed incomplete JSON');
       } catch (retryError) {
-        // If still fails, return error
+        // If still fails, return error with more context
+        console.error('Failed to fix JSON. Retry error:', retryError);
         const errorPos = parseError instanceof SyntaxError && parseError.message.match(/position (\d+)/)
           ? parseInt(parseError.message.match(/position (\d+)/)![1])
           : 0;

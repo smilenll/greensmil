@@ -8,5 +8,4 @@ export const photoAiAnalysis = defineFunction({
   environment: {
     AWS_REGION_OVERRIDE: 'us-east-2', // Override region for Bedrock access
   },
-  // Dependencies are automatically installed from package.json
 });
