@@ -33,7 +33,7 @@ export function HeroSection({
           fill
           className="object-cover scale-110"
           style={{
-            filter: 'blur(100px)',
+            filter: 'blur(30px)',
           }}
           priority
         />
@@ -75,11 +75,6 @@ export function HeroSection({
               {title}
             </span>
           </h1>
-
-          {/* Subtitle */}
-          <h2 className="text-xl md:text-2xl lg:text-3xl font-semibold text-white/90 drop-shadow-md">
-            {subtitle}
-          </h2>
 
           {/* Description */}
           <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed drop-shadow-md">
