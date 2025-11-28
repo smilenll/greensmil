@@ -23,7 +23,7 @@ export function ShowMoreText({
 
   useEffect(() => {
     const checkTruncation = () => {
-      if (textRef.current) {
+      if (textRef.current && !isExpanded) {
         setIsTruncated(textRef.current.scrollHeight > textRef.current.clientHeight);
       }
     };
@@ -31,7 +31,7 @@ export function ShowMoreText({
     checkTruncation();
     window.addEventListener('resize', checkTruncation);
     return () => window.removeEventListener('resize', checkTruncation);
-  }, [children]);
+  }, [children, isExpanded]);
 
   return (
     <div className={className}>
