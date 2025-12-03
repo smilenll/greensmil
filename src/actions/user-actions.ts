@@ -296,7 +296,6 @@ export async function getUsersAction(
   });
 }
 
-// CREATE USER
 export async function createUser(email: string, temporaryPassword: string): Promise<ActionResponse<string>> {
   return withRole('admin', async () => {
     const client = createCognitoClient();

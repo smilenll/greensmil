@@ -10,22 +10,8 @@ import { defineAuth, secret } from "@aws-amplify/backend";
 export const auth = defineAuth({
   loginWith: {
     email: true,
-    // Google OAuth - Enabled for production
-    externalProviders: {
-      google: {
-        clientId: secret('GOOGLE_CLIENT_ID'),
-        clientSecret: secret('GOOGLE_CLIENT_SECRET'),
-        scopes: ['email', 'profile', 'openid'],
-      },
-      callbackUrls: [
-        'http://localhost:3000/auth/callback',
-        'https://greensmil.com/auth/callback',
-      ],
-      logoutUrls: [
-        'http://localhost:3000',
-        'https://greensmil.com',
-      ],
-    },
+    // Google OAuth will be configured manually in Cognito Console after deployment
+    // This avoids the complexity of backend secrets for initial deployment
   },
   groups: ['admin'],
   userAttributes: {

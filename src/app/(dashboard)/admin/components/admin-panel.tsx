@@ -26,7 +26,7 @@ export default function AdminPanel({ children, user }: AdminPanelProps) {
             <div className="flex-1">
               <div className="flex items-center gap-4">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Welcome, {user.username}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Welcome, {user.preferredUsername || user.username}</p>
                   {user.groups && user.groups.length > 0 && (
                     <p className="text-xs text-gray-500 dark:text-gray-400">Groups: {user.groups.join(', ')}</p>
                   )}

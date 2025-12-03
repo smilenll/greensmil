@@ -1,13 +1,14 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { getCurrentUser, signOut, fetchAuthSession } from 'aws-amplify/auth';
+import { getCurrentUser, signOut, fetchAuthSession, fetchUserAttributes } from 'aws-amplify/auth';
 import { Hub } from 'aws-amplify/utils';
 import { useRouter } from 'next/navigation';
 
 interface User {
   userId: string;
   username: string;
+  preferredUsername?: string;
   email?: string;
   groups?: string[];
   emailVerified?: boolean;
@@ -72,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const currentUser = await getCurrentUser();
       const session = await fetchAuthSession();
+      const attributes = await fetchUserAttributes();
 
       // Get groups from the ID token payload
       const idToken = session.tokens?.idToken;
@@ -86,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData = {
         userId: currentUser.userId,
         username: currentUser.username,
+        preferredUsername: attributes.preferred_username,
         email: (typeof idToken?.payload.email === 'string' ? idToken.payload.email : undefined) || currentUser.signInDetails?.loginId || currentUser.username,
         groups: groups,
         emailVerified: idToken?.payload.email_verified === true

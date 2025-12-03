@@ -10,6 +10,7 @@ import { useRecaptcha } from '@/hooks/use-recaptcha';
 import { verifyRecaptcha } from '@/actions/recaptcha-actions';
 
 interface SignUpData {
+  username: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -31,6 +32,7 @@ export function SignUpStepRegister({ onSuccess }: SignUpStepRegisterProps) {
   } = useForm<SignUpData>({
     mode: 'onTouched',
     defaultValues: {
+      username: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -58,11 +60,15 @@ export function SignUpStepRegister({ onSuccess }: SignUpStepRegisterProps) {
       }
 
       // Sign up with Cognito
+      // Note: username = email (for login), preferred_username = display name
       const { nextStep } = await signUp({
         username: data.email,
         password: data.password,
         options: {
-          userAttributes: { email: data.email },
+          userAttributes: {
+            email: data.email,
+            preferred_username: data.username
+          },
           autoSignIn: true
         }
       });
@@ -90,6 +96,32 @@ export function SignUpStepRegister({ onSuccess }: SignUpStepRegisterProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <FormInput
+        label="Username"
+        type="text"
+        autoComplete="username"
+        placeholder="johndoe"
+        required
+        registration={register('username', {
+          required: 'Username is required',
+          minLength: {
+            value: 3,
+            message: 'Username must be at least 3 characters'
+          },
+          maxLength: {
+            value: 20,
+            message: 'Username must be at most 20 characters'
+          },
+          pattern: {
+            value: /^[a-zA-Z0-9_]+$/,
+            message: 'Username can only contain letters, numbers, and underscores'
+          }
+        })}
+        error={errors.username?.message}
+        hint="3-20 characters, letters, numbers, and underscores only"
+        disabled={isSubmitting}
+      />
+
       <FormInput
         label="Email"
         type="email"

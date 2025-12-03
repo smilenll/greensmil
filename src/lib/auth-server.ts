@@ -10,6 +10,7 @@ const { runWithAmplifyServerContext } = createServerRunner({
 export interface ServerUser {
   userId: string;
   username: string;
+  preferredUsername?: string;
   attributes?: Record<string, string | undefined>;
   groups: string[]; // Always defined (defaults to empty array)
 }
@@ -70,6 +71,7 @@ export async function getAuthenticatedUserWithAttributes(): Promise<ServerUser |
           return {
             userId: currentUser.userId,
             username: currentUser.username,
+            preferredUsername: attributes.preferred_username,
             attributes
           };
         } catch (authError: unknown) {
@@ -173,12 +175,13 @@ export async function requireRole(role: string): Promise<ServerUser> {
  * Require specific role for server components (pages/layouts)
  * Automatically redirects to specified path if user doesn't have the required role
  * This is more elegant than try-catch blocks in components
+ * Fetches user attributes including preferredUsername for display purposes
  */
 export async function requireRoleOrRedirect(
   role: string,
   redirectPath = '/'
 ): Promise<ServerUser> {
-  const user = await getAuthenticatedUser();
+  const user = await getAuthenticatedUserWithAttributes();
 
   if (!user || !(await userHasRole(role))) {
     const { redirect } = await import('next/navigation');
