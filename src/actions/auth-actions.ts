@@ -1,9 +1,16 @@
 'use server';
 
-import { deleteUser, fetchAuthSession, fetchUserAttributes } from 'aws-amplify/auth';
+import { deleteUser, fetchAuthSession, fetchUserAttributes } from 'aws-amplify/auth/server';
 import { ActionResponse, success, error } from '@/types/action-response';
 import { AdminUpdateUserAttributesCommand, CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-provider';
-import { runWithAmplifyServerContext } from '@/utils/amplify-server-utils';
+import { cookies } from 'next/headers';
+import { createServerRunner } from '@aws-amplify/adapter-nextjs';
+import outputs from '../../amplify_outputs.json';
+
+// Create server runner for Amplify server-side operations
+const { runWithAmplifyServerContext } = createServerRunner({
+  config: outputs,
+});
 
 // Initialize Cognito client with admin credentials
 const cognitoClient = new CognitoIdentityProviderClient({
