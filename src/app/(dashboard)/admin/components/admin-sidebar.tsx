@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Users,
-  Settings,
   ChevronDown,
   UserPlus,
   UserCheck,
@@ -13,8 +12,7 @@ import {
   Upload,
   Image as ImageIcon,
   Home,
-  LayoutDashboard,
-  RefreshCw
+  LayoutDashboard
 } from 'lucide-react';
 import {
   Sidebar,
@@ -56,14 +54,6 @@ const menuItems = [
     items: [
       { title: 'Photo Gallery', icon: ImageIcon, href: '/admin/photos' },
       { title: 'Upload Photos', icon: Upload, href: '/admin/photos/upload' },
-    ],
-  },
-  {
-    title: 'System Settings',
-    icon: Settings,
-    href: '/admin/settings',
-    items: [
-          { title: 'Data Migration', icon: RefreshCw, href: '/admin/settings/migrations' },
     ],
   },
 ];

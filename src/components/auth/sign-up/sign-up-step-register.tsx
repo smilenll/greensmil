@@ -8,6 +8,7 @@ import { FormInput } from '@/components/form-fields';
 import { Loader2 } from 'lucide-react';
 import { useRecaptcha } from '@/hooks/use-recaptcha';
 import { verifyRecaptcha } from '@/actions/recaptcha-actions';
+import { GoogleOAuthButton } from '../google-oauth-button';
 
 interface SignUpData {
   username: string;
@@ -22,6 +23,7 @@ interface SignUpStepRegisterProps {
 
 export function SignUpStepRegister({ onSuccess }: SignUpStepRegisterProps) {
   const [error, setError] = useState('');
+  const [googleError, setGoogleError] = useState('');
   const { executeRecaptcha } = useRecaptcha();
 
   const {
@@ -44,6 +46,7 @@ export function SignUpStepRegister({ onSuccess }: SignUpStepRegisterProps) {
   const onSubmit = async (data: SignUpData) => {
     try {
       setError('');
+      setGoogleError('');
 
       // Execute reCAPTCHA
       const recaptchaToken = await executeRecaptcha('signup');
@@ -96,6 +99,30 @@ export function SignUpStepRegister({ onSuccess }: SignUpStepRegisterProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {/* Google OAuth Button */}
+      <GoogleOAuthButton
+        disabled={isSubmitting}
+        onError={setGoogleError}
+      />
+
+      {/* Google Sign-In Error */}
+      {googleError && (
+        <div className="text-sm text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/30 p-3 rounded-md border border-amber-200 dark:border-amber-900">
+          <p className="font-medium mb-1">Error</p>
+          <p>{googleError}</p>
+        </div>
+      )}
+
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
+        </div>
+      </div>
+
       <FormInput
         label="Username"
         type="text"

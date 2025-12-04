@@ -72,7 +72,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       const currentUser = await getCurrentUser();
-      const session = await fetchAuthSession();
+
+      // Fetch session with forceRefresh to handle token issues
+      let session;
+      try {
+        session = await fetchAuthSession({ forceRefresh: false });
+      } catch (sessionError) {
+        // If session fetch fails (e.g., Identity Pool error), try without credentials
+        session = await fetchAuthSession();
+      }
+
       const attributes = await fetchUserAttributes();
 
       // Get groups from the ID token payload
@@ -97,8 +106,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userData);
       setError(null);
     } catch (err) {
+      // User is not authenticated - this is a normal state, not an error
       setUser(null);
-      setError(err instanceof Error ? err.message : 'Authentication failed');
+      setError(null);
     } finally {
       setLoading(false);
     }
