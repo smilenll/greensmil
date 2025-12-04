@@ -104,8 +104,26 @@ if (nodejsFunctionConstruct && nodejsFunctionConstruct.bundling) {
   };
 }
 
-// Export function name for Next.js to use
+// Add OAuth configuration to outputs
+// Google OAuth is configured manually in Cognito Console UI
+// This tells the client library that OAuth is available
 backend.addOutput({
+  auth: {
+    oauth: {
+      identity_providers: ['Google'],
+      domain: 'greensmil.auth.us-east-2.amazoncognito.com',
+      scopes: ['email', 'openid', 'profile', 'aws.cognito.signin.user.admin'],
+      redirect_sign_in_uri: [
+        'http://localhost:3000/auth/callback',
+        'https://greensmil.com/auth/callback',
+      ],
+      redirect_sign_out_uri: [
+        'http://localhost:3000',
+        'https://greensmil.com',
+      ],
+      response_type: 'code',
+    },
+  },
   custom: {
     photoAiAnalysisFunctionName: backend.photoAiAnalysis.resources.lambda.functionName,
   },
