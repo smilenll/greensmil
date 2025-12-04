@@ -110,7 +110,7 @@ if (nodejsFunctionConstruct && nodejsFunctionConstruct.bundling) {
 backend.addOutput({
   auth: {
     oauth: {
-      identity_providers: ['Google'],
+      identity_providers: ['GOOGLE'],
       domain: 'greensmil.auth.us-east-2.amazoncognito.com',
       scopes: ['email', 'openid', 'profile', 'aws.cognito.signin.user.admin'],
       redirect_sign_in_uri: [
