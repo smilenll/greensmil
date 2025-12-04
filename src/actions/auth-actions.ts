@@ -1,6 +1,6 @@
 'use server';
 
-import { deleteUser, fetchAuthSession, fetchUserAttributes } from 'aws-amplify/auth/server';
+import { fetchAuthSession, fetchUserAttributes } from 'aws-amplify/auth/server';
 import { ActionResponse, success, error } from '@/types/action-response';
 import { AdminUpdateUserAttributesCommand, CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-provider';
 import { cookies } from 'next/headers';
@@ -20,22 +20,6 @@ const cognitoClient = new CognitoIdentityProviderClient({
     secretAccessKey: process.env.COGNITO_SECRET_ACCESS_KEY!,
   },
 });
-
-/**
- * Deletes the currently authenticated user's account
- * This action does NOT require admin privileges - users can delete their own accounts
- */
-export async function deleteOwnAccount(): Promise<ActionResponse<void>> {
-  try {
-    // deleteUser works on the currently authenticated user
-    await deleteUser();
-
-    return success(undefined);
-  } catch (err) {
-    console.error('Error deleting account:', err);
-    return error(err instanceof Error ? err.message : 'Failed to delete account');
-  }
-}
 
 /**
  * Updates the preferred username for the current authenticated user

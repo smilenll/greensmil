@@ -80,6 +80,42 @@ A modern full-stack portfolio and web platform built with Next.js, AWS Amplify, 
 ### Forms & Validation
 - **react-hook-form** - Form state management and validation
 
+## 📚 Official Documentation References
+
+When working on this project, always consult the official documentation for the following technologies:
+
+### AWS Amplify
+- **Gen 2 Documentation**: https://docs.amplify.aws/
+- **Authentication (React)**: https://docs.amplify.aws/react/build-a-backend/auth/
+- **Data & GraphQL**: https://docs.amplify.aws/react/build-a-backend/data/
+- **Storage**: https://docs.amplify.aws/react/build-a-backend/storage/
+- **Server-side Rendering**: https://docs.amplify.aws/react/build-a-backend/server-side-rendering/
+- **Amplify UI Components**: https://ui.docs.amplify.aws/react/
+
+### Next.js
+- **Official Documentation**: https://nextjs.org/docs
+- **App Router**: https://nextjs.org/docs/app
+- **Server Actions**: https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations
+- **Middleware**: https://nextjs.org/docs/app/building-your-application/routing/middleware
+- **API Reference**: https://nextjs.org/docs/app/api-reference
+
+### React Hook Form
+- **Official Documentation**: https://react-hook-form.com/
+- **API Reference**: https://react-hook-form.com/docs
+- **Examples**: https://react-hook-form.com/form-builder
+
+### shadcn/ui
+- **Official Documentation**: https://ui.shadcn.com/
+- **Components**: https://ui.shadcn.com/docs/components
+- **Installation**: https://ui.shadcn.com/docs/installation/next
+- **Theming**: https://ui.shadcn.com/docs/theming
+
+**Note**: Always verify implementation patterns against the latest official documentation, especially for:
+- AWS Amplify auth functions (e.g., `deleteUser`, `signIn`, `signOut`)
+- Next.js App Router patterns and best practices
+- React Hook Form validation and integration
+- shadcn/ui component usage and customization
+
 ## ⚠️ Important Constraints & Guidelines
 
 ### AWS Amplify Version Compatibility
