@@ -56,15 +56,11 @@ export function SignInForm({ onSuccess, onForgotPassword }: SignInFormProps) {
       // Provide better error message based on error type
       const errorMessage = err instanceof Error ? err.message : 'Google sign in failed';
 
-      if (process.env.NODE_ENV === 'development') {
-        setGoogleError(
+      setGoogleError(
           'Google Sign-In is not available in development mode. ' +
           'This feature is enabled only in production. ' +
           'Please use email/password sign-in for local development.'
         );
-      } else {
-        setGoogleError(errorMessage);
-      }
     }
   };
 
