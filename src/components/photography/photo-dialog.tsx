@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { SafeHtml } from '@/components/ui/safe-html';
 import { Heart } from 'lucide-react';
-import type { Photo } from '@/actions/photo-actions';
+import type { Photo } from '@/types/photo';
 import { PictureFrame } from './picture-frame';
 
 interface PhotoDialogProps {

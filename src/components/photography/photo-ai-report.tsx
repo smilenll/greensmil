@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PhotoAIAnalysis } from '@/actions/photo-actions';
+import { type PhotoAIAnalysis } from '@/types/photo';
 import { Sparkles } from 'lucide-react';
 
 interface PhotoAIReportProps {

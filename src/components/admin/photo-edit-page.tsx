@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { type Photo } from "@/actions/photo-actions";
+import { type Photo } from "@/types/photo";
 import { PhotoPreview } from "./photo-preview";
 import { PhotoEditForm } from "./photo-edit-form";
 import { PhotoAIReportsTable } from "./photo-ai-reports-table";
@@ -65,28 +65,7 @@ export function PhotoEditPage({ photo: initialPhoto }: PhotoEditPageProps) {
 
         {/* Selected Report Display */}
         {selectedReportId && (() => {
-          let selectedReport = photo.aiReports?.find(r => r.id === selectedReportId);
-
-          // Fallback to legacy data if no report found and this is the photo ID
-          if (!selectedReport && selectedReportId === photo.id && photo.aiAnalyzed) {
-            selectedReport = {
-              id: photo.id,
-              photoId: photo.id,
-              compositionScore: photo.aiCompositionScore || 0,
-              compositionRationale: photo.aiCompositionRationale || '',
-              lightingScore: photo.aiLightingScore || 0,
-              lightingRationale: photo.aiLightingRationale || '',
-              subjectScore: photo.aiSubjectScore || 0,
-              subjectRationale: photo.aiSubjectRationale || '',
-              technicalScore: photo.aiTechnicalScore || 0,
-              technicalRationale: photo.aiTechnicalRationale || '',
-              creativityScore: photo.aiCreativityScore || 0,
-              creativityRationale: photo.aiCreativityRationale || '',
-              overallScore: photo.aiOverallScore || 0,
-              analyzedAt: photo.aiAnalyzedAt || '',
-              createdAt: photo.aiAnalyzedAt || '',
-            };
-          }
+          const selectedReport = photo.aiReports?.find(r => r.id === selectedReportId);
 
           return selectedReport ? (
             <div className="mb-6">

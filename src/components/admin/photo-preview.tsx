@@ -1,6 +1,6 @@
 "use client";
 
-import { type Photo } from "@/actions/photo-actions";
+import { type Photo } from "@/types/photo";
 import { PhotoCard } from "@/components/photography/photo-card";
 import { PhotoLikeButton } from "@/components/photography/photo-like-button";
 

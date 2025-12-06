@@ -7,7 +7,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { uploadPhoto, type CreatePhotoInput } from "@/actions/photo-actions";
+import { createPhoto } from "@/actions/photo-actions";
+import { type CreatePhotoInput } from "@/types/photo";
 import { optimizeImageClient } from "@/lib/client-image-optimizer";
 import { Button } from "@/components/ui/button";
 import { Upload, X, Loader2 } from "lucide-react";
@@ -113,7 +114,7 @@ export function PhotoUploadForm() {
         file: optimized.file,
       };
 
-      const response = await uploadPhoto(input);
+      const response = await createPhoto(input);
 
       if (response.status === "success") {
         toast.success("Photo uploaded successfully!");

@@ -107,7 +107,7 @@ export default async function PhotoPage({ params }: PhotoPageProps) {
               />
                <PhotoAIAnalysisButton
                   photoId={photo.id}
-                  isAnalyzed={photo.aiAnalyzed}
+                  isAnalyzed={!!photo.aiReports && photo.aiReports.length > 0}
                   isAdmin={isAdmin}
                 />
             </div>

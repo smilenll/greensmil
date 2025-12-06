@@ -4,7 +4,7 @@ import { Card, CardFooter, CardHeader, CardTitle, CardDescription } from '@/comp
 import { SafeHtml } from '@/components/ui/safe-html';
 import { Loader2 } from 'lucide-react';
 import { AmplifyImage } from './amplify-image';
-import type { Photo } from '@/actions/photo-actions';
+import type { Photo } from '@/types/photo';
 
 interface PhotoCardProps {
   photo: Photo;

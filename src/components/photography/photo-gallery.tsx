@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { togglePhotoLike, type Photo } from '@/actions/photo-actions';
+import { togglePhotoLike } from '@/actions/photo-actions';
+import { type Photo } from '@/types/photo';
 import { Button } from '@/components/ui/button';
 import { Card, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-context';

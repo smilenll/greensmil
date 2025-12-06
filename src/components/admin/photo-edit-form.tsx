@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { updatePhoto, deletePhoto, type Photo } from "@/actions/photo-actions";
+import { updatePhoto, deletePhoto } from "@/actions/photo-actions";
+import { type Photo } from "@/types/photo";
 import { Button } from "@/components/ui/button";
 import { FormInput, FormTextarea } from "@/components/form-fields";
 import { optimizeImageClient } from "@/lib/client-image-optimizer";
@@ -276,7 +277,7 @@ export function PhotoEditForm({ photo, onSuccess }: PhotoEditFormProps) {
         <div className="flex flex-col gap-2">
           <PhotoAIAnalysisButton
             photoId={photo.id}
-            isAnalyzed={photo.aiAnalyzed}
+            isAnalyzed={!!photo.aiReports && photo.aiReports.length > 0}
             variant="outline"
             size="default"
             className="w-full justify-start"

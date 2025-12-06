@@ -1,6 +1,6 @@
 "use client";
 
-import { type Photo } from "@/actions/photo-actions";
+import { type Photo } from "@/types/photo";
 import {
   Table,
   TableBody,
@@ -26,31 +26,7 @@ export function PhotoAIReportsTable({
   onReportClick,
 }: PhotoAIReportsTableProps) {
   // Use the aiReports array from the photo (sorted newest first)
-  // Fallback to legacy data if aiReports is empty but legacy fields exist
-  let reports = photo.aiReports || [];
-
-  if (reports.length === 0 && photo.aiAnalyzed) {
-    // Use legacy data as fallback
-    reports = [
-      {
-        id: photo.id, // Using photo ID as report ID for legacy data
-        photoId: photo.id,
-        analyzedAt: photo.aiAnalyzedAt || '',
-        overallScore: photo.aiOverallScore || 0,
-        compositionScore: photo.aiCompositionScore || 0,
-        compositionRationale: photo.aiCompositionRationale || '',
-        lightingScore: photo.aiLightingScore || 0,
-        lightingRationale: photo.aiLightingRationale || '',
-        subjectScore: photo.aiSubjectScore || 0,
-        subjectRationale: photo.aiSubjectRationale || '',
-        technicalScore: photo.aiTechnicalScore || 0,
-        technicalRationale: photo.aiTechnicalRationale || '',
-        creativityScore: photo.aiCreativityScore || 0,
-        creativityRationale: photo.aiCreativityRationale || '',
-        createdAt: photo.aiAnalyzedAt || '',
-      },
-    ];
-  }
+  const reports = photo.aiReports || [];
 
   if (reports.length === 0) {
     return (
