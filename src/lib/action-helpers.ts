@@ -55,7 +55,10 @@ export async function withRole<T>(
   } catch (err) {
     // Auth error caught early
     if (err instanceof Error) {
-      if (err.message.includes('Unauthorized') || err.message.includes('not authorized') || err.message.includes('Admin access required')) {
+      if (err.message.includes('Authentication required') || err.message.includes('not authenticated')) {
+        return unauthorized('Authentication required');
+      }
+      if (err.message.includes('Unauthorized') || err.message.includes('not authorized') || err.message.includes('Admin access required') || err.message.includes('Role')) {
         return unauthorized(`${role.charAt(0).toUpperCase() + role.slice(1)} access required`);
       }
     }
