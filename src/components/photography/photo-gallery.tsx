@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
 import { PhotoCard } from './photo-card';
 import { PhotoLikeButton } from './photo-like-button';
+import { PhotoCommentIndicator } from './photo-comment-indicator';
 import { toast } from 'sonner';
 
 interface PhotoGalleryProps {
@@ -151,20 +152,27 @@ export function PhotoGallery({ photos: initialPhotos }: PhotoGalleryProps) {
                 onImageLoad={handleImageLoad}
                 onImageError={handleImageError}
                 actions={
-                  <PhotoLikeButton
-                    photoId={photo.id}
-                    likeCount={photo.likeCount}
-                    isLiked={photo.isLikedByCurrentUser || false}
-                    isLoading={likingId === photo.id}
-                    isAuthenticated={isAuthenticated}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleLike(photo.id);
-                    }}
-                    size="sm"
-                    className="gap-1"
-                  />
+                  <div className="flex items-center justify-between w-full">
+                    <PhotoLikeButton
+                      photoId={photo.id}
+                      likeCount={photo.likeCount}
+                      isLiked={photo.isLikedByCurrentUser || false}
+                      isLoading={likingId === photo.id}
+                      isAuthenticated={isAuthenticated}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleLike(photo.id);
+                      }}
+                      size="sm"
+                      className="gap-1"
+                    />
+                    <PhotoCommentIndicator
+                      commentCount={photo.commentCount || 0}
+                      size="sm"
+                      className="gap-1"
+                    />
+                  </div>
                 }
               />
             </Link>

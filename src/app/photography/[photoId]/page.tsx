@@ -4,6 +4,7 @@ import { PictureFrame } from '@/components/photography/picture-frame';
 import { PhotoDetailActions } from '@/components/photography/photo-detail-actions';
 import { PhotoAIReport } from '@/components/photography/photo-ai-report';
 import { PhotoAIAnalysisButton } from '@/components/photography/photo-ai-analysis-button';
+import { PhotoComments } from '@/components/photography/photo-comments';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SafeHtml } from '@/components/ui/safe-html';
@@ -52,11 +53,13 @@ export default async function PhotoPage({ params }: PhotoPageProps) {
 
   const photo = response.data;
 
-  // Check if user is admin
+  // Get user info for admin check and comments
   let isAdmin = false;
+  let currentUserId: string | undefined;
   try {
     const user = await requireAuth();
     isAdmin = user.groups?.includes('admin') || false;
+    currentUserId = user.userId;
   } catch {
     // Not admin or not authenticated
   }
@@ -119,6 +122,15 @@ export default async function PhotoPage({ params }: PhotoPageProps) {
               <PhotoAIReport analysis={aiAnalysis} />
             </div>
           )}
+
+          {/* Comments Section */}
+          <div className="mt-8 w-full max-w-4xl">
+            <PhotoComments
+              photoId={photo.id}
+              currentUserId={currentUserId}
+              isAdmin={isAdmin}
+            />
+          </div>
         </div>
       </div>
     </div>

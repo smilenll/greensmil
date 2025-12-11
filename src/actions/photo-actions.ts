@@ -110,7 +110,7 @@ export async function getAllPhotos(): Promise<ActionResponse<PhotosData>> {
     return withRole('user', async (user) =>{
 
     const { data: photos } = await cookieBasedClient.models.Photo.list({
-      selectionSet: ['id', 'title', 'description', 'imageKey', 'createdAt', 'updatedAt', 'likes.*']
+      selectionSet: ['id', 'title', 'description', 'imageKey', 'createdAt', 'updatedAt', 'likes.*', 'comments.*']
     });
 
     if (!photos) {
@@ -121,6 +121,7 @@ export async function getAllPhotos(): Promise<ActionResponse<PhotosData>> {
       photos.map(async (photo) => {
         const likeCount = photo.likes?.length || 0;
         const userLiked = photo.likes?.some(like => like.userId === user.userId) ?? false;
+        const commentCount = photo.comments?.length || 0;
 
         const signedUrl = await getSignedUrl(
           s3Client,
@@ -132,6 +133,7 @@ export async function getAllPhotos(): Promise<ActionResponse<PhotosData>> {
           ...photo,
           imageUrl: signedUrl,
           likeCount,
+          commentCount,
           isLikedByCurrentUser: userLiked,
         });
       })

@@ -153,6 +153,7 @@ export interface Photo {
   imageUrl: string;
   imageKey: string;
   likeCount: number;
+  commentCount?: number;
   createdAt: string;
   // Computed/additional fields not in database
   isLikedByCurrentUser?: boolean;
