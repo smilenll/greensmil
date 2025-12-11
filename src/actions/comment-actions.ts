@@ -119,31 +119,18 @@ export async function deleteComment(commentId: string): Promise<ActionResponse<v
       return error('Comment not found');
     }
 
-    // Check if user is owner or admin
-    // Note: withRole helper would be too restrictive here since owners should also be able to delete
-    // So we do a custom check
+    // Check authorization: owner or admin
     const isOwner = comment.userId === user.userId;
+    const isAdmin = user.groups.includes('admin');
 
-    if (!isOwner) {
-      // Check if user is admin
-      return withRole('admin', async () => {
-        // Delete comment
-        await cookieBasedClient.models.Comment.delete({ id: commentId });
-
-        console.log('[deleteComment] Comment deleted by admin:', commentId);
-
-        // Revalidate paths
-        revalidatePath('/photography');
-        revalidatePath(`/photography/${comment.photoId}`);
-
-        return success(undefined);
-      });
+    if (!isOwner && !isAdmin) {
+      return error('You can only delete your own comments');
     }
 
-    // User is owner, delete comment
+    // Delete comment
     await cookieBasedClient.models.Comment.delete({ id: commentId });
 
-    console.log('[deleteComment] Comment deleted by owner:', commentId);
+    console.log(`[deleteComment] Comment deleted by ${isOwner ? 'owner' : 'admin'}:`, commentId);
 
     // Revalidate paths
     revalidatePath('/photography');

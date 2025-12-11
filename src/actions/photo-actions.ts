@@ -123,12 +123,6 @@ export async function getAllPhotos(): Promise<ActionResponse<PhotosData>> {
         const userLiked = photo.likes?.some(like => like.userId === user.userId) ?? false;
         const commentCount = photo.comments?.length || 0;
 
-        // Debug logging
-        console.log(`[getAllPhotos] Photo ${photo.id}: comments=${commentCount}, likes=${likeCount}`);
-        if (photo.comments && photo.comments.length > 0) {
-          console.log(`[getAllPhotos] Comments for ${photo.id}:`, photo.comments);
-        }
-
         const signedUrl = await getSignedUrl(
           s3Client,
           new GetObjectCommand({ Bucket: BUCKET_NAME, Key: photo.imageKey }),
@@ -154,23 +148,28 @@ export async function togglePhotoLike(photoId: string): Promise<ActionResponse<P
     const { data: photo } = await cookieBasedClient.models.Photo.get({ id: photoId }, {selectionSet: ['id', 'title', 'description', 'imageKey', 'createdAt', 'updatedAt', 'likes.*']});
     if (!photo) return error('Photo not found');
 
+    // Check if user has already liked this photo
+    const isAlreadyLiked = photo.likes.some((like) => like.userId === user.userId);
 
-    const isLiking = photo.likes.some((like) => like.userId === user.userId);
+    // Toggle: if already liked, unlike it; if not liked, like it
+    const result = isAlreadyLiked
+      ? await cookieBasedClient.models.PhotoLike.delete({ photoId, userId: user.userId })
+      : await cookieBasedClient.models.PhotoLike.create({ photoId, userId: user.userId });
 
-    const result = isLiking 
-      ? await cookieBasedClient.models.PhotoLike.create({ photoId, userId: user.userId })
-      : await cookieBasedClient.models.PhotoLike.delete({ photoId, userId: user.userId });
+    if (!result.data) {
+      return error(isAlreadyLiked ? 'Failed to unlike photo' : 'Failed to like photo');
+    }
 
-    if (!result.data && isLiking) return error(isLiking ? 'Failed to like photo' : 'Failed to unlike photo');
-
+    // Refetch all likes to get accurate count
     const { data: allLikes } = await cookieBasedClient.models.PhotoLike.list({
       filter: { photoId: { eq: photoId } },
     });
-    
+
     revalidatePath('/photography');
 
+    // Return NEW state (opposite of what it was before)
     return success({
-      isLiked: isLiking,
+      isLiked: !isAlreadyLiked,
       likeCount: allLikes?.length || 0,
     });
   });
