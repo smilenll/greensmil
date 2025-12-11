@@ -41,8 +41,19 @@ export async function createComment(input: CreateCommentInput): Promise<ActionRe
       return error('Photo not found');
     }
 
-    // Create comment - use preferredUsername if available, fallback to username
-    const displayName = user.preferredUsername || user.username;
+    // Create comment - use preferredUsername if available, fallback to email (split at @) or username
+    let displayName = user.preferredUsername;
+
+    if (!displayName && user.attributes?.email) {
+      // Use email username part (before @) as fallback
+      displayName = user.attributes.email.split('@')[0];
+    }
+
+    if (!displayName) {
+      // Last resort: use Cognito username
+      displayName = user.username;
+    }
+
     const { data: commentData } = await cookieBasedClient.models.Comment.create({
       photoId,
       userId: user.userId,

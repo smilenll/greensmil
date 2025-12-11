@@ -123,6 +123,12 @@ export async function getAllPhotos(): Promise<ActionResponse<PhotosData>> {
         const userLiked = photo.likes?.some(like => like.userId === user.userId) ?? false;
         const commentCount = photo.comments?.length || 0;
 
+        // Debug logging
+        console.log(`[getAllPhotos] Photo ${photo.id}: comments=${commentCount}, likes=${likeCount}`);
+        if (photo.comments && photo.comments.length > 0) {
+          console.log(`[getAllPhotos] Comments for ${photo.id}:`, photo.comments);
+        }
+
         const signedUrl = await getSignedUrl(
           s3Client,
           new GetObjectCommand({ Bucket: BUCKET_NAME, Key: photo.imageKey }),

@@ -79,6 +79,7 @@ export const photoResponseSchema = z.object({
   imageUrl: z.string(),
   imageKey: z.string(),
   likeCount: z.number().default(0),
+  commentCount: z.number().optional().default(0),
   createdAt: z.string(),
   isLikedByCurrentUser: z.boolean().optional(),
   aiReports: z.array(z.object({
