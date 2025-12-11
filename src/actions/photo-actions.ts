@@ -107,7 +107,7 @@ export async function createPhoto(input: CreatePhotoInput): Promise<ActionRespon
 }
 
 export async function getAllPhotos(): Promise<ActionResponse<PhotosData>> {
-    return withRole('user', async (user) =>{
+    return withAuth(async (user) =>{
 
     const { data: photos } = await cookieBasedClient.models.Photo.list({
       selectionSet: ['id', 'title', 'description', 'imageKey', 'createdAt', 'updatedAt', 'likes.*', 'comments.*']

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getPhotoById, getPhotoAIAnalysis } from '@/actions/photo-actions';
+import { getCommentsByPhotoId } from '@/actions/comment-actions';
 import { PictureFrame } from '@/components/photography/picture-frame';
 import { PhotoDetailActions } from '@/components/photography/photo-detail-actions';
 import { PhotoAIReport } from '@/components/photography/photo-ai-report';
@@ -68,6 +69,10 @@ export default async function PhotoPage({ params }: PhotoPageProps) {
   const aiAnalysisResponse = await getPhotoAIAnalysis(photoId);
   const aiAnalysis = aiAnalysisResponse.status === 'success' ? aiAnalysisResponse.data : null;
 
+  // Get comments for the photo
+  const commentsResponse = await getCommentsByPhotoId(photoId);
+  const initialComments = commentsResponse.status === 'success' ? commentsResponse.data.comments : [];
+
   return (
     <div className="min-h-screen pt-28 pb-16 px-4 lg:px-6">
       <div className="container mx-auto max-w-6xl">
@@ -127,6 +132,7 @@ export default async function PhotoPage({ params }: PhotoPageProps) {
           <div className="mt-8 w-full max-w-4xl">
             <PhotoComments
               photoId={photo.id}
+              initialComments={initialComments}
               currentUserId={currentUserId}
               isAdmin={isAdmin}
             />

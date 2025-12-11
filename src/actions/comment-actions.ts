@@ -41,11 +41,12 @@ export async function createComment(input: CreateCommentInput): Promise<ActionRe
       return error('Photo not found');
     }
 
-    // Create comment
+    // Create comment - use preferredUsername if available, fallback to username
+    const displayName = user.preferredUsername || user.username;
     const { data: commentData } = await cookieBasedClient.models.Comment.create({
       photoId,
       userId: user.userId,
-      username: user.username,
+      username: displayName,
       content,
     });
 

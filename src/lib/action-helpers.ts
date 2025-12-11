@@ -3,7 +3,7 @@
  * Handles auth checks early and bubbles errors to reduce try/catch blocks
  */
 
-import { requireAuth, requireRole } from '@/lib/auth-server';
+import { requireAuth, requireRole, getAuthenticatedUserWithAttributes, type ServerUser } from '@/lib/auth-server';
 import { ActionResponse, success, error, unauthorized } from '@/types/action-response';
 
 /**
@@ -19,10 +19,13 @@ import { ActionResponse, success, error, unauthorized } from '@/types/action-res
  * }
  */
 export async function withAuth<T>(
-  handler: (user: { userId: string; username: string }) => Promise<ActionResponse<T>>
+  handler: (user: ServerUser) => Promise<ActionResponse<T>>
 ): Promise<ActionResponse<T>> {
   try {
-    const user = await requireAuth();
+    const user = await getAuthenticatedUserWithAttributes();
+    if (!user) {
+      return unauthorized('Authentication required');
+    }
     return await handler(user);
   } catch (err) {
     // Auth error caught early - no need for try/catch in handler
@@ -47,7 +50,7 @@ export async function withAuth<T>(
  */
 export async function withRole<T>(
   role: 'admin' | 'user',
-  handler: (user: { userId: string; username: string; groups: string[] }) => Promise<ActionResponse<T>>
+  handler: (user: ServerUser) => Promise<ActionResponse<T>>
 ): Promise<ActionResponse<T>> {
   try {
     const user = await requireRole(role);

@@ -1,43 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, MessageSquare, Trash2, Send } from 'lucide-react';
 import { toast } from 'sonner';
-import { createComment, getCommentsByPhotoId, deleteComment } from '@/actions/comment-actions';
+import { createComment, deleteComment } from '@/actions/comment-actions';
 import type { Comment } from '@/types/comment';
 
 interface PhotoCommentsProps {
   photoId: string;
+  initialComments: Comment[];
   currentUserId?: string;
   isAdmin?: boolean;
 }
 
-export function PhotoComments({ photoId, currentUserId, isAdmin = false }: PhotoCommentsProps) {
-  const [comments, setComments] = useState<Comment[]>([]);
+export function PhotoComments({ photoId, initialComments, currentUserId, isAdmin = false }: PhotoCommentsProps) {
+  const [comments, setComments] = useState<Comment[]>(initialComments);
   const [newComment, setNewComment] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isFetchingComments, setIsFetchingComments] = useState(true);
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
-
-  // Fetch comments on mount
-  useEffect(() => {
-    loadComments();
-  }, [photoId]);
-
-  const loadComments = async () => {
-    setIsFetchingComments(true);
-    const result = await getCommentsByPhotoId(photoId);
-
-    if (result.status === 'success') {
-      setComments(result.data.comments);
-    } else {
-      toast.error(result.error || 'Failed to load comments');
-    }
-    setIsFetchingComments(false);
-  };
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,11 +122,7 @@ export function PhotoComments({ photoId, currentUserId, isAdmin = false }: Photo
         </form>
 
         {/* Comments List */}
-        {isFetchingComments ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : comments.length === 0 ? (
+        {comments.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             No comments yet. Be the first to comment!
           </div>
