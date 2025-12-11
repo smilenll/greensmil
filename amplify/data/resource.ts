@@ -10,6 +10,7 @@ const schema = a.schema({
       uploadedBy: a.string().required(), // User ID who uploaded
       likes: a.hasMany('PhotoLike', 'photoId'),
       aiReports: a.hasMany('PhotoAIReport', 'photoId'),
+      comments: a.hasMany('Comment', 'photoId'),
       createdAt: a.datetime(),
       updatedAt: a.datetime(),
     })
@@ -60,6 +61,22 @@ const schema = a.schema({
       allow.authenticated().to(['read']),
     ])
     .identifier(['photoId', 'userId']), // Composite key to prevent duplicate likes
+
+  Comment: a
+    .model({
+      photoId: a.id().required(),
+      photo: a.belongsTo('Photo', 'photoId'),
+      userId: a.string().required(), // Cognito user ID
+      username: a.string().required(), // Username for display
+      content: a.string().required(),
+      createdAt: a.datetime(),
+      updatedAt: a.datetime(),
+    })
+    .authorization((allow) => [
+      allow.authenticated().to(['read', 'create']), // Authenticated users can read and create
+      allow.owner(), // Users can update/delete their own comments
+      allow.group('admin').to(['delete']), // Admins can delete any comment
+    ]),
 });
 
 export type Schema = ClientSchema<typeof schema>;

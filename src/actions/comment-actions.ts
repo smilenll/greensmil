@@ -1,0 +1,156 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { generateServerClientUsingCookies } from '@aws-amplify/adapter-nextjs/data';
+import type { Schema } from '../../amplify/data/resource';
+import { cookies } from 'next/headers';
+import outputs from '../../amplify_outputs.json';
+import { ActionResponse, success, error } from '@/types/action-response';
+import { withAuth, withRole } from '@/lib/action-helpers';
+import {
+  type Comment,
+  type CommentsData,
+  type CreateCommentInput,
+  createCommentSchema,
+  validateCommentResponse,
+} from '@/types/comment';
+
+const cookieBasedClient = generateServerClientUsingCookies<Schema>({
+  config: outputs,
+  cookies,
+});
+
+/**
+ * Create a new comment on a photo
+ * Only authenticated users can create comments
+ */
+export async function createComment(input: CreateCommentInput): Promise<ActionResponse<Comment>> {
+  return withAuth(async (user) => {
+    // Validate input with Zod schema
+    const validation = createCommentSchema.safeParse(input);
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      return error(firstError.message);
+    }
+
+    const { photoId, content } = validation.data;
+
+    // Check if photo exists
+    const { data: photo } = await cookieBasedClient.models.Photo.get({ id: photoId });
+    if (!photo) {
+      return error('Photo not found');
+    }
+
+    // Create comment
+    const { data: commentData } = await cookieBasedClient.models.Comment.create({
+      photoId,
+      userId: user.userId,
+      username: user.username,
+      content,
+    });
+
+    if (!commentData) {
+      return error('Failed to create comment');
+    }
+
+    console.log('[createComment] Comment created:', commentData.id);
+
+    // Revalidate paths
+    revalidatePath('/photography');
+    revalidatePath(`/photography/${photoId}`);
+
+    const validatedComment = validateCommentResponse(commentData);
+
+    return success(validatedComment);
+  });
+}
+
+/**
+ * Get all comments for a specific photo
+ * Only authenticated users can view comments
+ */
+export async function getCommentsByPhotoId(photoId: string): Promise<ActionResponse<CommentsData>> {
+  return withAuth(async () => {
+    // Verify photo exists
+    const { data: photo } = await cookieBasedClient.models.Photo.get({ id: photoId });
+    if (!photo) {
+      return error('Photo not found');
+    }
+
+    // Get all comments for this photo
+    const { data: comments } = await cookieBasedClient.models.Comment.list({
+      filter: { photoId: { eq: photoId } },
+    });
+
+    if (!comments) {
+      return success({ comments: [] });
+    }
+
+    // Sort comments by creation date (newest first)
+    const sortedComments = comments
+      .map(comment => validateCommentResponse(comment))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return success({ comments: sortedComments });
+  });
+}
+
+/**
+ * Delete a comment
+ * Users can delete their own comments, admins can delete any comment
+ */
+export async function deleteComment(commentId: string): Promise<ActionResponse<void>> {
+  return withAuth(async (user) => {
+    // Get comment to check ownership
+    const { data: comment } = await cookieBasedClient.models.Comment.get({ id: commentId });
+    if (!comment) {
+      return error('Comment not found');
+    }
+
+    // Check if user is owner or admin
+    // Note: withRole helper would be too restrictive here since owners should also be able to delete
+    // So we do a custom check
+    const isOwner = comment.userId === user.userId;
+
+    if (!isOwner) {
+      // Check if user is admin
+      return withRole('admin', async () => {
+        // Delete comment
+        await cookieBasedClient.models.Comment.delete({ id: commentId });
+
+        console.log('[deleteComment] Comment deleted by admin:', commentId);
+
+        // Revalidate paths
+        revalidatePath('/photography');
+        revalidatePath(`/photography/${comment.photoId}`);
+
+        return success(undefined);
+      });
+    }
+
+    // User is owner, delete comment
+    await cookieBasedClient.models.Comment.delete({ id: commentId });
+
+    console.log('[deleteComment] Comment deleted by owner:', commentId);
+
+    // Revalidate paths
+    revalidatePath('/photography');
+    revalidatePath(`/photography/${comment.photoId}`);
+
+    return success(undefined);
+  });
+}
+
+/**
+ * Get comment count for a photo
+ * Only authenticated users can view comment counts
+ */
+export async function getCommentCount(photoId: string): Promise<ActionResponse<number>> {
+  return withAuth(async () => {
+    const { data: comments } = await cookieBasedClient.models.Comment.list({
+      filter: { photoId: { eq: photoId } },
+    });
+
+    return success(comments?.length || 0);
+  });
+}
