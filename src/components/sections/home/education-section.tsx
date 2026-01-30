@@ -18,7 +18,7 @@ const education: Education[] = [
   },
   {
     institution: 'Technical University of Varna',
-    degree: "Bachelor's, Computer Science",
+    degree: "Bachelor's, Naval Architecture",
     period: 'September 2013 - September 2017',
   },
 ];
