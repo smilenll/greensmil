@@ -77,6 +77,61 @@ const schema = a.schema({
       allow.owner(), // Users can update/delete their own comments
       allow.group('admin').to(['delete']), // Admins can delete any comment
     ]),
+
+  Email: a
+    .model({
+      messageId: a.string().required(), // Resend email ID
+      from: a.string().required(), // Sender email address
+      fromName: a.string(), // Sender display name
+      to: a.string().required(), // Recipient (web@greensmil.com)
+      subject: a.string().required(),
+      htmlBody: a.string(), // HTML version
+      textBody: a.string(), // Plain text version
+      threadId: a.string(), // For grouping conversations
+      inReplyTo: a.string(), // Email message ID this is replying to
+      references: a.string(), // Full reference chain
+      isRead: a.boolean().default(false),
+      isStarred: a.boolean().default(false),
+      receivedAt: a.datetime().required(),
+      replies: a.hasMany('EmailReply', 'emailId'),
+      createdAt: a.datetime(),
+      updatedAt: a.datetime(),
+    })
+    .authorization((allow) => [
+      allow.group('admin').to(['read', 'update', 'delete']),
+    ]),
+
+  EmailReply: a
+    .model({
+      emailId: a.id().required(),
+      email: a.belongsTo('Email', 'emailId'),
+      messageId: a.string().required(), // Resend message ID
+      from: a.string().required(), // web@greensmil.com
+      to: a.string().required(), // Recipient email
+      subject: a.string().required(),
+      htmlBody: a.string(),
+      textBody: a.string(),
+      sentBy: a.string().required(), // Admin user ID who sent
+      sentAt: a.datetime().required(),
+      createdAt: a.datetime(),
+      updatedAt: a.datetime(),
+    })
+    .authorization((allow) => [
+      allow.group('admin').to(['read', 'create', 'delete']),
+    ]),
+
+  EmailAttachment: a
+    .model({
+      emailId: a.id().required(),
+      resendAttachmentId: a.string().required(),
+      filename: a.string().required(),
+      contentType: a.string().required(),
+      size: a.integer(), // Bytes
+      createdAt: a.datetime(),
+    })
+    .authorization((allow) => [
+      allow.group('admin').to(['read']),
+    ]),
 });
 
 export type Schema = ClientSchema<typeof schema>;

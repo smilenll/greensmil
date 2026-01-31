@@ -12,7 +12,10 @@ import {
   Upload,
   Image as ImageIcon,
   Home,
-  LayoutDashboard
+  LayoutDashboard,
+  Mail,
+  Inbox,
+  PenSquare,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -54,6 +57,15 @@ const menuItems = [
     items: [
       { title: 'Photo Gallery', icon: ImageIcon, href: '/admin/photos' },
       { title: 'Upload Photos', icon: Upload, href: '/admin/photos/upload' },
+    ],
+  },
+  {
+    title: 'Email Inbox',
+    icon: Mail,
+    href: '/admin/inbox',
+    items: [
+      { title: 'Inbox', icon: Inbox, href: '/admin/inbox' },
+      { title: 'Compose', icon: PenSquare, href: '/admin/inbox/compose' },
     ],
   },
 ];
