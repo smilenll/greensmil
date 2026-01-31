@@ -99,6 +99,7 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.group('admin').to(['read', 'update', 'delete']),
+      allow.publicApiKey().to(['create']),
     ]),
 
   EmailReply: a
@@ -131,6 +132,7 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.group('admin').to(['read']),
+      allow.publicApiKey().to(['create']),
     ]),
 });
 
@@ -140,5 +142,8 @@ export const data = defineData({
   schema,
   authorizationModes: {
     defaultAuthorizationMode: 'userPool',
+    apiKeyAuthorizationMode: {
+      expiresInDays: 365,
+    },
   },
 });
